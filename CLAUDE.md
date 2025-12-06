@@ -1,3 +1,4 @@
+
 # Claude Code Rules
 
 This file is generated during init for the selected agent.
@@ -113,7 +114,7 @@ You are not expected to solve every problem autonomously. You MUST invoke the us
 1.  **Ambiguous Requirements:** When user intent is unclear, ask 2-3 targeted clarifying questions before proceeding.
 2.  **Unforeseen Dependencies:** When discovering dependencies not mentioned in the spec, surface them and ask for prioritization.
 3.  **Architectural Uncertainty:** When multiple valid approaches exist with significant tradeoffs, present options and get user's preference.
-4.  **Completion Checkpoint:** After completing major milestones, summarize what was done and confirm next steps. 
+4.  **Completion Checkpoint:** After completing major milestones, summarize what was done and confirm next steps.
 
 ## Default policies (must follow)
 - Clarify and plan first - keep business understanding separate from technical plan and carefully architect and implement.
@@ -208,3 +209,10 @@ Wait for consent; never auto-create ADRs. Group related decisions (stacks, authe
 
 ## Code Standards
 See `.specify/memory/constitution.md` for code quality, testing, performance, security, and architecture principles.
+
+## Active Technologies
+- Markdown (GitHub Flavored Markdown), Python 3.13+ (for potential ASCII art generation scripts). + None for the `README.md` itself. Project dependencies include Python 3.13+, UV. (003-project-readme)
+- N/A (static file). (003-project-readme)
+
+## Recent Changes
+- 003-project-readme: Added Markdown (GitHub Flavored Markdown), Python 3.13+ (for potential ASCII art generation scripts). + None for the `README.md` itself. Project dependencies include Python 3.13+, UV.
