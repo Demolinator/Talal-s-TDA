@@ -8,6 +8,55 @@
 
 ---
 
+## Project Location & Structure
+
+**Root Directory**: `/mnt/d/Talal/Work/Hackathons-Panaversity/phase-1/`
+
+**Specification Files** (Use as Reference):
+- `specs/features/phase-3-chatbot/CONSTITUTION.md` - v3.0.0 governance
+- `specs/features/phase-3-chatbot/spec.md` - Feature requirements
+- `specs/features/phase-3-chatbot/agent-spec.md` - Agent behavior patterns
+- `specs/features/phase-3-chatbot/mcp-tools-spec.md` - MCP tool specifications
+- `specs/features/phase-3-chatbot/tasks.md` - Granular implementation tasks
+
+**Implementation Directories** (Create/Modify):
+```
+phase-3/                        (NEW - Phase III code)
+├── frontend/                   (NEW - ChatBot UI)
+│   └── src/
+│       └── components/ChatBot.tsx
+│
+├── backend/                    (NEW - Chat API & MCP Server)
+│   └── src/
+│       ├── api/chat.py
+│       ├── services/
+│       │   ├── agent_service.py
+│       │   └── mcp_service.py
+│       └── models/conversation.py
+│
+└── README.md
+
+OR (Alternative - Extend Phase II)
+
+phase-2/frontend/src/
+├── components/ChatBot.tsx      (NEW)
+├── lib/chatApi.ts              (NEW)
+└── types/chat.ts               (NEW)
+
+phase-2/backend/src/
+├── api/chat.py                 (NEW)
+├── services/
+│   ├── agent_service.py        (NEW)
+│   └── mcp_service.py          (NEW)
+└── models/conversation.py      (NEW)
+```
+
+**History & Documentation**:
+- `history/prompts/phase-3-chatbot/001-phase-3-specifications.spec.prompt.md` - Prompt history
+- `history/adr/` - Architecture decision records (optional, use /sp.adr)
+
+---
+
 ## Executive Summary
 
 This plan outlines the step-by-step implementation strategy for Phase III: AI-Powered Todo Chatbot. The implementation is organized into **4 major milestones** with **parallel frontend/backend development**, focusing on delivering a production-ready chatbot with natural language understanding, MCP tool integration, conversation persistence, and comprehensive observability.

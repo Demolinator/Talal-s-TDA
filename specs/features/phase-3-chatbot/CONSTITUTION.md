@@ -515,51 +515,207 @@ trace = {
 
 ---
 
-## Monorepo Updates (Phase III)
+## Monorepo Structure (Actual)
 
 ```
-phase-1/
-├── ...Phase I & II structure...
-├── frontend/
-│   ├── src/
-│   │   ├── app/
+/mnt/d/Talal/Work/Hackathons-Panaversity/phase-1/    # Project root
+├── phase-1/                          # Phase I: CLI Console App (COMPLETED)
+│   ├── src/todo_app/
+│   │   ├── main.py                   # CLI entry point
+│   │   ├── models.py                 # Data models (Task)
+│   │   ├── storage.py                # In-memory storage
+│   │   ├── operations.py             # CRUD operations
+│   │   ├── ui.py                     # Menu UI
+│   │   └── banner.py                 # CLI banner
+│   └── tests/                        # 87 passing tests, 77% coverage
+│
+├── phase-2/                          # Phase II: Full-Stack Web App (COMPLETED)
+│   ├── frontend/                     # Next.js 16+ React 19+ TypeScript
+│   │   ├── app/                      # Next.js App Router pages
+│   │   │   ├── (auth)/login/
+│   │   │   ├── (auth)/signup/
+│   │   │   ├── (dashboard)/dashboard/
+│   │   │   ├── (dashboard)/dashboard/tasks/
+│   │   │   └── layout.tsx
 │   │   ├── components/
-│   │   │   ├── ChatBot.tsx           # ChatKit UI component (NEW)
-│   │   │   └── ChatMessage.tsx        # Individual message display
+│   │   │   ├── auth/
+│   │   │   │   ├── LoginForm.tsx
+│   │   │   │   ├── SignupForm.tsx
+│   │   │   │   └── SessionExpirationWarning.tsx
+│   │   │   ├── tasks/
+│   │   │   │   ├── TaskList.tsx
+│   │   │   │   ├── TaskCard.tsx
+│   │   │   │   └── TaskForm.tsx
+│   │   │   └── layout/
+│   │   │       ├── Header.tsx
+│   │   │       └── Sidebar.tsx
 │   │   ├── lib/
-│   │   │   ├── chatApi.ts            # API client for /api/chat (NEW)
-│   │   │   └── ...
-│   │   └── types/
-│   │       └── chat.ts               # Message, Conversation types (NEW)
-│   ├── chatbot/                       # Phase III specific (NEW)
-│   │   ├── CLAUDE.md                 # ChatBot-specific guidelines
+│   │   │   └── api/ (auth, tasks client)
+│   │   ├── types/
+│   │   │   ├── api.ts
+│   │   │   ├── task.ts
+│   │   │   └── user.ts
+│   │   ├── tests/
+│   │   │   ├── e2e/ (Playwright)
+│   │   │   └── unit/ (Vitest)
+│   │   ├── middleware.ts
+│   │   └── CLAUDE.md
+│   │
+│   ├── backend/                      # FastAPI 0.110+ Python 3.13+ SQLModel
+│   │   ├── src/
+│   │   │   ├── main.py               # FastAPI app entry
+│   │   │   ├── api/
+│   │   │   │   ├── auth.py           # Auth endpoints (Better Auth)
+│   │   │   │   ├── tasks.py          # Task CRUD endpoints
+│   │   │   │   └── health.py         # Health check
+│   │   │   ├── services/
+│   │   │   │   ├── auth_service.py   # JWT token management
+│   │   │   │   └── task_service.py   # Task business logic
+│   │   │   ├── models/
+│   │   │   │   ├── user.py           # User SQLModel
+│   │   │   │   └── task.py           # Task SQLModel
+│   │   │   ├── auth/
+│   │   │   │   ├── jwt.py            # JWT utilities
+│   │   │   │   └── dependencies.py   # Auth dependencies
+│   │   │   └── db/
+│   │   │       ├── session.py        # Database session
+│   │   │       └── migrations/       # Alembic migrations
+│   │   ├── tests/
+│   │   │   ├── unit/
+│   │   │   │   ├── test_auth.py
+│   │   │   │   └── test_task_service.py
+│   │   │   └── integration/
+│   │   │       ├── test_auth_api.py
+│   │   │       ├── test_authorization.py
+│   │   │       └── test_tasks_api.py
+│   │   └── CLAUDE.md
+│   │
+│   ├── auth-server/                  # Better Auth integration (Optional)
+│   │   ├── src/
+│   │   │   ├── server.ts
+│   │   │   ├── auth.ts
+│   │   │   ├── db.ts
+│   │   │   └── migrate.ts
+│   │   └── package.json
+│   │
+│   └── README.md
+│
+├── phase-3/                          # Phase III: AI-Powered Chatbot (SPECS CREATED)
+│   └── README.md
+│
+├── phase-4/                          # Phase IV: Kubernetes Deployment (PLANNED)
+│   └── README.md
+│
+├── phase-5/                          # Phase V: Cloud Deployment (PLANNED)
+│   └── README.md
+│
+├── specs/                            # Specification documents
+│   └── features/
+│       ├── console-todo-app/        # Phase I specs
+│       ├── web-todo-app/            # Phase II specs
+│       ├── phase-3-chatbot/         # Phase III specs (NEW)
+│       │   ├── CONSTITUTION.md      # v3.0.0 governance
+│       │   ├── spec.md              # Feature specification
+│       │   ├── agent-spec.md        # Agent behavior patterns
+│       │   ├── mcp-tools-spec.md    # MCP tool specifications
+│       │   ├── plan.md              # Implementation plan
+│       │   └── tasks.md             # Granular tasks
+│       └── ...other features...
+│
+├── history/                         # Development history & artifacts
+│   ├── adr/                         # Architecture Decision Records
+│   │   ├── 0001-in-memory-storage-phase-i.md
+│   │   ├── 0002-uv-package-manager.md
+│   │   ├── 0003-next-js-app-router.md
+│   │   ├── 0004-fastapi-sqlmodel.md
+│   │   ├── 0005-neon-serverless-postgresql.md
+│   │   ├── 0006-jwt-httponly-cookies.md
+│   │   ├── 0007-monorepo-phase-organization.md
 │   │   └── README.md
-│   └── CLAUDE.md                     # Updated for Phase III
-├── backend/
-│   ├── src/
-│   │   ├── api/
-│   │   │   ├── chat.py               # POST /api/chat endpoint (NEW)
-│   │   │   └── ...
-│   │   ├── services/
-│   │   │   ├── agent_service.py      # OpenAI Agents SDK wrapper (NEW)
-│   │   │   ├── mcp_service.py        # MCP tool definitions (NEW)
-│   │   │   └── ...
-│   │   ├── models/
-│   │   │   ├── conversation.py       # Conversation & Message models (NEW)
-│   │   │   └── ...
-│   │   └── ...
-│   ├── chatbot/                       # Phase III specific (NEW)
-│   │   ├── CLAUDE.md                 # Chatbot-specific guidelines
+│   │
+│   └── prompts/                     # Prompt History Records (PHRs)
+│       ├── constitution/
+│       ├── console-todo-app/
+│       ├── web-todo-app/
+│       ├── phase-3-chatbot/
+│       │   └── 001-phase-3-specifications.spec.prompt.md
+│       └── general/
+│
+├── .specify/                        # Spec-Kit Plus infrastructure
+│   ├── memory/
+│   │   └── constitution.md          # v2.0.0 (Phase II base)
+│   ├── templates/
+│   │   ├── spec-template.md
+│   │   ├── plan-template.md
+│   │   ├── tasks-template.md
+│   │   ├── adr-template.md
+│   │   └── phr-template.prompt.md
+│   └── scripts/bash/
+│       ├── create-new-feature.sh
+│       ├── setup-plan.sh
+│       ├── create-phr.sh
+│       ├── create-adr.sh
+│       └── validate-migration.sh
+│
+├── .claude/                         # Claude Code configuration
+│   ├── agents/                      # Specialized subagents
+│   │   ├── auth-better-auth.md
+│   │   ├── cloud-blueprint-generator.md
+│   │   ├── project-structure-architect.md
+│   │   ├── rag-chatbot-architect.md
+│   │   └── ...12 more agents...
+│   │
+│   ├── commands/                    # Slash commands
+│   │   ├── sp.specify.md
+│   │   ├── sp.plan.md
+│   │   ├── sp.implement.md
+│   │   ├── sp.tasks.md
+│   │   ├── sp.analyze.md
+│   │   ├── sp.adr.md
+│   │   └── ...more commands...
+│   │
+│   └── skills/                      # Reusable capabilities
+│       ├── python-tdd-implementation.md
+│       ├── create-fastapi-endpoint.md
+│       ├── create-react-component.md
+│       ├── generate-database-migration.md
+│       └── ...more skills...
+│
+├── docs/                            # Documentation
+│   └── neon-setup.md
+│
+├── shared/                          # Shared utilities
+│   ├── types/
 │   │   └── README.md
-│   └── CLAUDE.md                     # Updated for Phase III
-└── specs/
-    └── features/
-        └── phase-3-chatbot/
-            ├── spec.md               # Feature specification
-            ├── agent-spec.md         # Agent behavior (NEW)
-            ├── mcp-tools-spec.md     # Tool specifications (NEW)
-            └── CONSTITUTION.md       # This file
+│   └── utils/
+│       └── README.md
+│
+├── CLAUDE.md                        # Root-level instructions (THIS FILE)
+├── README.md                        # Project overview
+├── pyproject.toml                   # Python project config
+├── .gitignore
+├── .python-version
+└── .git/                            # Git repository (initialized Dec 13)
 ```
+
+### Project Layout Summary
+
+**Root Directory**: `/mnt/d/Talal/Work/Hackathons-Panaversity/phase-1/`
+
+**Three Active Phases**:
+1. **phase-1/** - Complete CLI app with 87 tests (77% coverage)
+2. **phase-2/** - Complete full-stack web app (frontend + backend + auth-server)
+3. **phase-3/** - Ready for chatbot implementation (specs complete)
+
+**Three Placeholder Phases**:
+- **phase-4/** - Kubernetes deployment (future)
+- **phase-5/** - Cloud deployment (future)
+
+**Core Directories**:
+- **specs/** - Feature specifications (by feature name, not phase)
+- **history/** - ADRs and Prompt History Records
+- **.specify/** - Spec-Kit Plus templates and scripts
+- **.claude/** - Claude Code configuration (agents, commands, skills)
 
 ---
 

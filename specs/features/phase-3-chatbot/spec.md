@@ -10,6 +10,39 @@
 
 ---
 
+## Project Location & Deployment
+
+**Project Root**: `/mnt/d/Talal/Work/Hackathons-Panaversity/phase-1/`
+
+**Phase III Specification Location**: `/mnt/d/Talal/Work/Hackathons-Panaversity/phase-1/specs/features/phase-3-chatbot/`
+
+**Phase III Implementation Location** (to be created):
+```
+/mnt/d/Talal/Work/Hackathons-Panaversity/phase-1/phase-3/
+├── frontend/                    # ChatKit UI + Next.js integration
+│   └── src/
+│       └── components/ChatBot.tsx
+│
+├── backend/                     # FastAPI chatbot endpoint
+│   └── src/
+│       ├── api/chat.py          # POST /api/{user_id}/chat
+│       ├── services/
+│       │   ├── agent_service.py # OpenAI Agents SDK
+│       │   └── mcp_service.py   # MCP tool server
+│       └── models/
+│           └── conversation.py  # Conversation & Message SQLModels
+│
+└── README.md
+```
+
+**Alternative Structure** (if not using phase-3/ directory):
+- **Frontend Component**: `phase-2/frontend/src/components/ChatBot.tsx`
+- **Backend API**: `phase-2/backend/src/api/chat.py`
+- **Backend Services**: `phase-2/backend/src/services/agent_service.py`, `mcp_service.py`
+- **Database Models**: `phase-2/backend/src/models/conversation.py`
+
+---
+
 ## Executive Summary
 
 Phase III introduces an AI-powered conversational interface to the Todo application using OpenAI's Agents SDK and Model Context Protocol (MCP). Users interact naturally with the todo system through a chat interface, where the AI agent understands their intent, invokes appropriate tools (via MCP), and provides natural language responses. This phase requires stateless chat architecture with database-persisted conversation state.
