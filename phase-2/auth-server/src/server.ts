@@ -1,0 +1,170 @@
+/**
+ * Better Auth Express Server
+ *
+ * Standalone authentication server that handles:
+ * - User signup (POST /auth/signup)
+ * - User login (POST /auth/login)
+ * - User logout (POST /auth/logout)
+ * - Session management (GET /auth/session)
+ * - JWT token generation
+ *
+ * Works in tandem with FastAPI backend:
+ * - Better Auth: Authentication endpoints
+ * - FastAPI: Business logic (tasks CRUD)
+ * - Shared: Same database, same JWT secret
+ */
+
+import express, { Request, Response, NextFunction } from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import { auth } from "./auth.js";
+import { testConnection } from "./db.js";
+
+// Load environment variables
+dotenv.config();
+
+/**
+ * Express Application
+ */
+const app = express();
+
+/**
+ * Middleware Configuration
+ */
+
+// Parse JSON request bodies
+app.use(express.json());
+
+// CORS Configuration
+// Allow frontend to make authenticated cross-origin requests
+const CORS_ORIGINS = process.env.CORS_ORIGINS?.split(",") || [
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+];
+
+app.use(
+  cors({
+    origin: CORS_ORIGINS,
+    credentials: true, // Required for cookies
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+/**
+ * Request Logging Middleware (Development)
+ */
+if (process.env.NODE_ENV !== "production") {
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+    next();
+  });
+}
+
+/**
+ * Health Check Endpoint
+ */
+app.get("/health", (req: Request, res: Response) => {
+  res.json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    service: "better-auth-server",
+    version: "1.0.0",
+  });
+});
+
+/**
+ * Better Auth Routes
+ *
+ * Mount Better Auth handler at /auth
+ * Provides endpoints:
+ * - POST /auth/sign-up (create account)
+ * - POST /auth/sign-in/email (login)
+ * - POST /auth/sign-out (logout)
+ * - GET /auth/get-session (current user)
+ */
+app.all("/auth/*", (req: Request, res: Response) => {
+  return auth.handler(req, res);
+});
+
+/**
+ * 404 Handler
+ */
+app.use((req: Request, res: Response) => {
+  res.status(404).json({
+    error: "Not Found",
+    message: `Cannot ${req.method} ${req.path}`,
+    availableRoutes: [
+      "GET /health",
+      "POST /auth/sign-up",
+      "POST /auth/sign-in/email",
+      "POST /auth/sign-out",
+      "GET /auth/get-session",
+    ],
+  });
+});
+
+/**
+ * Global Error Handler
+ */
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error("❌ Server error:", err);
+  res.status(500).json({
+    error: "Internal Server Error",
+    message:
+      process.env.NODE_ENV === "production"
+        ? "An unexpected error occurred"
+        : err.message,
+  });
+});
+
+/**
+ * Server Startup
+ */
+const PORT = parseInt(process.env.PORT || "3001", 10);
+
+async function startServer() {
+  try {
+    // Test database connection
+    console.log("🔌 Testing database connection...");
+    const connected = await testConnection();
+
+    if (!connected) {
+      throw new Error("Database connection failed");
+    }
+
+    // Start Express server
+    app.listen(PORT, () => {
+      console.log(`\n✅ Better Auth server started successfully\n`);
+      console.log(`   Port: ${PORT}`);
+      console.log(`   Base URL: ${process.env.BETTER_AUTH_URL}`);
+      console.log(`   Environment: ${process.env.NODE_ENV || "development"}`);
+      console.log(`   CORS Origins: ${CORS_ORIGINS.join(", ")}`);
+      console.log(`\n📋 Available Endpoints:`);
+      console.log(`   GET  /health                 - Health check`);
+      console.log(`   POST /auth/sign-up           - Create account`);
+      console.log(`   POST /auth/sign-in/email     - Login`);
+      console.log(`   POST /auth/sign-out          - Logout`);
+      console.log(`   GET  /auth/get-session       - Current user\n`);
+    });
+  } catch (error) {
+    console.error("❌ Failed to start server:", error);
+    process.exit(1);
+  }
+}
+
+// Start the server
+startServer();
+
+/**
+ * Graceful Shutdown
+ */
+process.on("SIGTERM", () => {
+  console.log("\n⚠️  SIGTERM received, shutting down gracefully...");
+  process.exit(0);
+});
+
+process.on("SIGINT", () => {
+  console.log("\n⚠️  SIGINT received, shutting down gracefully...");
+  process.exit(0);
+});
