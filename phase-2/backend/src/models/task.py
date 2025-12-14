@@ -75,9 +75,9 @@ class Task(TaskBase, table=True):
         description="Task completion status",
     )
     user_id: uuid.UUID = Field(
-        foreign_key="users.id",
+        foreign_key="user.id",
         index=True,  # Index for fast user task queries
-        description="Owner user ID (foreign key to users table)",
+        description="Owner user ID (foreign key to user table)",
     )
     created_at: datetime = Field(
         default_factory=datetime.utcnow,

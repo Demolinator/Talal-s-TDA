@@ -37,9 +37,8 @@ if config.config_file_name is not None:
 
 # Import all models here so Alembic can detect them for autogenerate
 from src.models.user import User  # noqa: F401
-
-# Import future models here:
-# from src.models.task import Task
+from src.models.task import Task  # noqa: F401
+from src.models.conversation import Conversation, Message  # noqa: F401
 
 # SQLModel's metadata object for autogenerate support
 # SQLModel.metadata contains all table definitions from models
