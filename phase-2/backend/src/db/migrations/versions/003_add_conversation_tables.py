@@ -5,16 +5,16 @@ Revises: 7582d33c41bc
 Create Date: 2025-12-14 14:00:00.000000
 
 """
+
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
 import sqlmodel
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = '003_add_conversation_tables'
-down_revision: Union[str, Sequence[str], None] = '7582d33c41bc'
+revision: str = "003_add_conversation_tables"
+down_revision: Union[str, Sequence[str], None] = "7582d33c41bc"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -35,16 +35,13 @@ def upgrade() -> None:
 
     # Create indexes for conversations
     op.create_index(
-        op.f('ix_conversations_user_id'),
-        'conversations',
-        ['user_id'],
-        unique=False
+        op.f("ix_conversations_user_id"), "conversations", ["user_id"], unique=False
     )
     op.create_index(
-        'ix_conversations_user_id_created_at',
-        'conversations',
-        ['user_id', 'created_at'],
-        unique=False
+        "ix_conversations_user_id_created_at",
+        "conversations",
+        ["user_id", "created_at"],
+        unique=False,
     )
 
     # Create messages table
@@ -64,41 +61,36 @@ def upgrade() -> None:
 
     # Create indexes for messages
     op.create_index(
-        op.f('ix_messages_conversation_id'),
-        'messages',
-        ['conversation_id'],
-        unique=False
+        op.f("ix_messages_conversation_id"),
+        "messages",
+        ["conversation_id"],
+        unique=False,
     )
     op.create_index(
-        'ix_messages_conversation_id_created_at',
-        'messages',
-        ['conversation_id', 'created_at'],
-        unique=False
+        "ix_messages_conversation_id_created_at",
+        "messages",
+        ["conversation_id", "created_at"],
+        unique=False,
     )
+    op.create_index(op.f("ix_messages_user_id"), "messages", ["user_id"], unique=False)
     op.create_index(
-        op.f('ix_messages_user_id'),
-        'messages',
-        ['user_id'],
-        unique=False
-    )
-    op.create_index(
-        'ix_messages_user_id_created_at',
-        'messages',
-        ['user_id', 'created_at'],
-        unique=False
+        "ix_messages_user_id_created_at",
+        "messages",
+        ["user_id", "created_at"],
+        unique=False,
     )
 
 
 def downgrade() -> None:
     """Remove conversations and messages tables."""
     # Drop messages table and indexes
-    op.drop_index('ix_messages_user_id_created_at', table_name='messages')
-    op.drop_index(op.f('ix_messages_user_id'), table_name='messages')
-    op.drop_index('ix_messages_conversation_id_created_at', table_name='messages')
-    op.drop_index(op.f('ix_messages_conversation_id'), table_name='messages')
-    op.drop_table('messages')
+    op.drop_index("ix_messages_user_id_created_at", table_name="messages")
+    op.drop_index(op.f("ix_messages_user_id"), table_name="messages")
+    op.drop_index("ix_messages_conversation_id_created_at", table_name="messages")
+    op.drop_index(op.f("ix_messages_conversation_id"), table_name="messages")
+    op.drop_table("messages")
 
     # Drop conversations table and indexes
-    op.drop_index('ix_conversations_user_id_created_at', table_name='conversations')
-    op.drop_index(op.f('ix_conversations_user_id'), table_name='conversations')
-    op.drop_table('conversations')
+    op.drop_index("ix_conversations_user_id_created_at", table_name="conversations")
+    op.drop_index(op.f("ix_conversations_user_id"), table_name="conversations")
+    op.drop_table("conversations")

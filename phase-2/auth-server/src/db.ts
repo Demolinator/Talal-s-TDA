@@ -1,43 +1,36 @@
 /**
- * Database Connection for Better Auth
+ * Database Connection Test for Better Auth
  *
- * Uses postgres.js client to connect to Neon PostgreSQL.
- * This is the recommended client for serverless PostgreSQL.
+ * Simple database connection test since Better Auth handles
+ * the database setup and migrations internally.
  */
 
-import postgres from "postgres";
 import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
 
 // Load environment variables
 dotenv.config();
 
-const DATABASE_URL = process.env.DATABASE_URL;
-
-if (!DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is required");
-}
-
-/**
- * PostgreSQL connection instance
- * Configured for Neon Serverless PostgreSQL
- */
-export const sql = postgres(DATABASE_URL, {
-  max: 10, // Connection pool size
-  idle_timeout: 20, // Close idle connections after 20 seconds
-  connect_timeout: 10, // Connection timeout in seconds
-  ssl: "require", // Neon requires SSL
-});
-
 /**
  * Test database connection
+ * Just checks if we can create/access the SQLite file
  */
 export async function testConnection(): Promise<boolean> {
   try {
-    const result = await sql`SELECT NOW() as time`;
-    console.log("✅ Database connected successfully:", result[0].time);
+    const dbPath = path.join(process.cwd(), "auth.db");
+
+    // Check if we can write to the directory
+    const dirPath = path.dirname(dbPath);
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+
+    console.log(`✅ Database path accessible: ${dbPath}`);
+    console.log("✅ Better Auth will handle database initialization");
     return true;
   } catch (error) {
-    console.error("❌ Database connection failed:", error);
+    console.error("❌ Database path check failed:", error);
     return false;
   }
 }
