@@ -5,14 +5,16 @@ description = "Monorepo workspace for multi-phase Todo App (Phases I-V)"
 requires-python = ">=3.13"
 dependencies = []
 
-[tool.uv.workspace]
-members = [
-    "phase-1",
-    "phase-2/backend",
-    # Future phases:
-    # "phase-3/chatbot",
-    # "phase-4/analytics",
-]
+# Workspace configuration disabled to prevent root .venv creation
+# Each project (phase-1, phase-2/backend) uses its own local .venv
+# [tool.uv.workspace]
+# members = [
+#     "phase-1",
+#     "phase-2/backend",
+#     # Future phases:
+#     # "phase-3/chatbot",
+#     # "phase-4/analytics",
+# ]
 
 [dependency-groups]
 dev = [

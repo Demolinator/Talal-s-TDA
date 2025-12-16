@@ -19,7 +19,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from src.api import auth, health, tasks
+from src.api import auth, chat, health, tasks
 
 # Load environment variables
 load_dotenv()
@@ -138,6 +138,10 @@ All endpoints are prefixed with `/api/`.
             "description": "Task management endpoints (CRUD operations, filtering, pagination)",
         },
         {
+            "name": "chat",
+            "description": "Chat and conversation endpoints with AI agent integration",
+        },
+        {
             "name": "health",
             "description": "Health check and monitoring endpoints",
         },
@@ -212,6 +216,7 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(tasks.router)
+app.include_router(chat.router)
 
 
 @app.get("/")

@@ -48,7 +48,7 @@ app.use(
     credentials: true, // Required for cookies
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  })
+  }),
 );
 
 /**
@@ -83,8 +83,28 @@ app.get("/health", (req: Request, res: Response) => {
  * - POST /auth/sign-out (logout)
  * - GET /auth/get-session (current user)
  */
-app.all("/auth/*", (req: Request, res: Response) => {
-  return auth.handler(req, res);
+app.all("/auth/*", async (req: Request, res: Response) => {
+  try {
+    console.log(`🔐 Auth request: ${req.method} ${req.path}`);
+    const response = await auth.handler(req);
+    return response;
+  } catch (error) {
+    console.error("❌ Better Auth error:", error);
+    if (error instanceof Error) {
+      console.error("❌ Error message:", error.message);
+      console.error("❌ Error cause:", error.cause);
+    }
+
+    res.status(500).json({
+      error: "Authentication service error",
+      message:
+        process.env.NODE_ENV === "production"
+          ? "Authentication is temporarily unavailable"
+          : error instanceof Error
+            ? error.message
+            : "Unknown error",
+    });
+  }
 });
 
 /**
@@ -125,13 +145,17 @@ const PORT = parseInt(process.env.PORT || "3001", 10);
 
 async function startServer() {
   try {
-    // Test database connection
     console.log("🔌 Testing database connection...");
     const connected = await testConnection();
 
     if (!connected) {
       throw new Error("Database connection failed");
     }
+
+    console.log("🔧 Initializing Better Auth...");
+    // Try to initialize auth to see the exact error
+    const testHandler = auth.handler;
+    console.log("✅ Better Auth initialized successfully");
 
     // Start Express server
     app.listen(PORT, () => {
@@ -149,6 +173,11 @@ async function startServer() {
     });
   } catch (error) {
     console.error("❌ Failed to start server:", error);
+    if (error instanceof Error) {
+      console.error("❌ Error message:", error.message);
+      console.error("❌ Error stack:", error.stack);
+      console.error("❌ Error cause:", error.cause);
+    }
     process.exit(1);
   }
 }

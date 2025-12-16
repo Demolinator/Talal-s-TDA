@@ -9,7 +9,10 @@ export const metadata: Metadata = {
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div
+      className="min-h-screen bg-gradient-to-b from-blue-50 to-white"
+      suppressHydrationWarning
+    >
       {/* Header */}
       <header className="container mx-auto px-4 py-6">
         <nav className="flex items-center justify-between">
@@ -65,19 +68,23 @@ export default function LandingPage() {
         <div className="mt-24 grid md:grid-cols-3 gap-8">
           {/* Feature 1 */}
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <div className="text-4xl mb-4">✅</div>
+            <div className="text-4xl mb-4" suppressHydrationWarning>
+              ✅
+            </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
               Task Management
             </h3>
             <p className="text-gray-600">
-              Create, edit, and delete tasks with an intuitive interface.
-              Mark tasks as complete to track your progress.
+              Create, edit, and delete tasks with an intuitive interface. Mark
+              tasks as complete to track your progress.
             </p>
           </div>
 
           {/* Feature 2 */}
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <div className="text-4xl mb-4">🔒</div>
+            <div className="text-4xl mb-4" suppressHydrationWarning>
+              🔒
+            </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
               Secure Authentication
             </h3>
@@ -89,13 +96,15 @@ export default function LandingPage() {
 
           {/* Feature 3 */}
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <div className="text-4xl mb-4">⚡</div>
+            <div className="text-4xl mb-4" suppressHydrationWarning>
+              ⚡
+            </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
               Fast & Responsive
             </h3>
             <p className="text-gray-600">
-              Built with Next.js 16, React 19, and Tailwind CSS for a smooth
-              and responsive user experience.
+              Built with Next.js 16, React 19, and Tailwind CSS for a smooth and
+              responsive user experience.
             </p>
           </div>
         </div>

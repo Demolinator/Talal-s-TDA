@@ -66,14 +66,14 @@ export function Header({ userName }: HeaderProps) {
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 md:h-20">
-          {/* Logo/Brand */}
+        {/* Logo/Brand */}
           <div className="flex-shrink-0">
             <a href="/dashboard" className="flex items-center">
               <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-blue-600 hover:text-blue-700 transition-colors">
-                Phase II Todo
+          Phase II Todo
               </h1>
             </a>
-          </div>
+        </div>
 
           {/* Desktop Navigation - Hidden on mobile */}
           <nav className="hidden md:flex items-center space-x-6 lg:space-x-8" aria-label="Main navigation">
@@ -91,14 +91,14 @@ export function Header({ userName }: HeaderProps) {
             </a>
             <span className="text-sm lg:text-base text-gray-500 border-l border-gray-300 pl-6 lg:pl-8">
               Welcome, <span className="font-semibold text-gray-700">{userName}</span>
-            </span>
-            <button
-              onClick={handleLogout}
-              disabled={isLoggingOut}
+          </span>
+          <button
+            onClick={handleLogout}
+            disabled={isLoggingOut}
               className="py-2 px-4 lg:px-6 bg-red-600 text-white text-sm lg:text-base font-medium rounded-md hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
               aria-label="Logout"
-            >
-              {isLoggingOut ? "Logging out..." : "Logout"}
+          >
+            {isLoggingOut ? "Logging out..." : "Logout"}
             </button>
           </nav>
 
