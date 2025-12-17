@@ -25,21 +25,35 @@ from typing import Generator
 from dotenv import load_dotenv
 from sqlmodel import Session, create_engine
 
-# Load environment variables
-load_dotenv()
+# Load environment variables (.env file is optional in production)
+try:
+    load_dotenv()
+except Exception:
+    # Ignore if .env file doesn't exist (production deployment)
+    pass
 
 # Get database URL from environment with Railway fallback
 DATABASE_URL = (
-    os.getenv("DATABASE_URL") or os.getenv("DB_URL") or os.getenv("POSTGRES_URL")
+    os.getenv("DATABASE_URL")
+    or os.getenv("DB_URL")
+    or os.getenv("POSTGRES_URL")
+    or os.getenv("DATABASE_PRIVATE_URL")  # Railway sometimes uses this
 )
 
 if not DATABASE_URL:
-    print("Warning: No DATABASE_URL found in environment variables")
-    print("Available environment variables:", list(os.environ.keys()))
+    print("❌ No DATABASE_URL found in environment variables")
+    print("Available environment variables:")
+    for key in sorted(os.environ.keys()):
+        if "URL" in key or "DATABASE" in key or "DB" in key or "POSTGRES" in key:
+            print(f"  {key}={os.environ[key][:50]}...")
+        else:
+            print(f"  {key}")
     raise ValueError(
         "DATABASE_URL environment variable is not set. "
-        "Please create a .env file with DATABASE_URL or set it in your environment."
+        "Please set DATABASE_URL in Railway environment variables."
     )
+
+print(f"✅ Using database: {DATABASE_URL[:50]}...")
 
 # Create SQLAlchemy engine with connection pooling
 # For production with Neon Serverless PostgreSQL
