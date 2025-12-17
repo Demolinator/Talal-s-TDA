@@ -22,6 +22,7 @@ RUN uv pip install --system --no-cache -r pyproject.toml
 # Copy source code and configuration
 COPY src/ ./src/
 COPY alembic.ini ./
+COPY .env ./
 
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash appuser \

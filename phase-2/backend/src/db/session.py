@@ -28,10 +28,14 @@ from sqlmodel import Session, create_engine
 # Load environment variables
 load_dotenv()
 
-# Get database URL from environment
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Get database URL from environment with Railway fallback
+DATABASE_URL = (
+    os.getenv("DATABASE_URL") or os.getenv("DB_URL") or os.getenv("POSTGRES_URL")
+)
 
 if not DATABASE_URL:
+    print("Warning: No DATABASE_URL found in environment variables")
+    print("Available environment variables:", list(os.environ.keys()))
     raise ValueError(
         "DATABASE_URL environment variable is not set. "
         "Please create a .env file with DATABASE_URL or set it in your environment."
