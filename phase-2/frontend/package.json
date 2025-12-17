@@ -2,6 +2,7 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "_deployment": "2025-12-17-trigger-redeploy",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
