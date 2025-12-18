@@ -42,12 +42,12 @@ export const auth = betterAuth({
 
   /**
    * Database Configuration
-   * Use Better Auth's built-in SQLite support
-   * Use absolute path to avoid permission issues in containerized environments
+   * Use PostgreSQL for production deployment
+   * Connection string provided via DATABASE_URL environment variable
    */
   database: {
-    provider: "sqlite",
-    url: "/app/auth.db",
+    provider: "postgres",
+    url: process.env.DATABASE_URL || "postgresql://localhost:5432/auth",
   },
 
   /**
