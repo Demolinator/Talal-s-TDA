@@ -154,8 +154,19 @@ async function startServer() {
 
     console.log("🔧 Initializing Better Auth...");
     // Try to initialize auth to see the exact error
-    const testHandler = auth.handler;
-    console.log("✅ Better Auth initialized successfully");
+    try {
+      const testHandler = auth.handler;
+      console.log("✅ Better Auth initialized successfully");
+    } catch (authError) {
+      console.error("❌ Better Auth initialization failed:");
+      console.error("Error:", authError);
+      if (authError instanceof Error) {
+        console.error("Message:", authError.message);
+        console.error("Stack:", authError.stack);
+        console.error("Cause:", authError.cause);
+      }
+      throw authError;
+    }
 
     // Start Express server
     app.listen(PORT, () => {
