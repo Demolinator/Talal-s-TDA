@@ -20,8 +20,7 @@ COPY . .
 # Build TypeScript code
 RUN npm run build
 
-# Remove devDependencies to reduce image size (optional)
-RUN npm prune --production
+# Note: Skip npm prune --production to avoid breaking better-sqlite3 native bindings
 
 # Expose port
 EXPOSE 3001
