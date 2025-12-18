@@ -99,7 +99,9 @@
       "Bash(timeout 10 python:*)",
       "WebSearch",
       "WebFetch(domain:openai.github.io)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(railway --version:*)",
+      "Bash(git ls-tree:*)"
     ],
     "deny": [],
     "ask": []
