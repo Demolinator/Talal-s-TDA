@@ -43,10 +43,11 @@ export const auth = betterAuth({
   /**
    * Database Configuration
    * Use Better Auth's built-in SQLite support
+   * Use absolute path to avoid permission issues in containerized environments
    */
   database: {
     provider: "sqlite",
-    url: "./auth.db",
+    url: "/app/auth.db",
   },
 
   /**
