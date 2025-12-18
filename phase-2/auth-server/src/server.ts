@@ -86,7 +86,7 @@ app.get("/health", (req: Request, res: Response) => {
 app.all("/auth/*", async (req: Request, res: Response) => {
   try {
     console.log(`🔐 Auth request: ${req.method} ${req.path}`);
-    const response = await auth.handler(req);
+    const response = await auth.handler(req as any);
     return response;
   } catch (error) {
     console.error("❌ Better Auth error:", error);
