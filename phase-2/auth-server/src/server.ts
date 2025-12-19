@@ -19,6 +19,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { auth } from "./auth.js";
 import { testConnection } from "./db.js";
+import { toNodeHandler } from "better-auth/node";
 
 // Load environment variables
 dotenv.config();
@@ -93,29 +94,7 @@ app.get("/api/auth/health", (req: Request, res: Response) => {
  * - POST /auth/sign-out (logout)
  * - GET /auth/get-session (current user)
  */
-app.all("/auth/*", async (req: Request, res: Response) => {
-  try {
-    console.log(`🔐 Auth request: ${req.method} ${req.path}`);
-    const response = await auth.handler(req as any);
-    return response;
-  } catch (error) {
-    console.error("❌ Better Auth error:", error);
-    if (error instanceof Error) {
-      console.error("❌ Error message:", error.message);
-      console.error("❌ Error cause:", error.cause);
-    }
-
-    res.status(500).json({
-      error: "Authentication service error",
-      message:
-        process.env.NODE_ENV === "production"
-          ? "Authentication is temporarily unavailable"
-          : error instanceof Error
-            ? error.message
-            : "Unknown error",
-    });
-  }
-});
+app.all("/auth/*", toNodeHandler(auth));
 
 /**
  * 404 Handler
