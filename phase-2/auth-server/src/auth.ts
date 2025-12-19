@@ -9,6 +9,7 @@
  */
 
 import { betterAuth } from "better-auth";
+import { Pool } from "pg";
 import dotenv from "dotenv";
 
 // Load environment variables
@@ -42,12 +43,11 @@ export const auth = betterAuth({
 
   /**
    * Database Configuration
-   * Better Auth will handle PostgreSQL connection internally
+   * Using Pool instance - Better Auth requires this for PostgreSQL
    */
-  database: {
-    provider: "postgres",
-    url: process.env.DATABASE_URL!,
-  },
+  database: new Pool({
+    connectionString: process.env.DATABASE_URL!,
+  }),
 
   /**
    * Email and Password Authentication
