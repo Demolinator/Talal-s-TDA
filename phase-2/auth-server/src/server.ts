@@ -62,9 +62,19 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 /**
- * Health Check Endpoint
+ * Health Check Endpoints
  */
 app.get("/health", (req: Request, res: Response) => {
+  res.json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    service: "better-auth-server",
+    version: "1.0.0",
+  });
+});
+
+// Railway healthcheck endpoint
+app.get("/api/auth/health", (req: Request, res: Response) => {
   res.json({
     status: "healthy",
     timestamp: new Date().toISOString(),
