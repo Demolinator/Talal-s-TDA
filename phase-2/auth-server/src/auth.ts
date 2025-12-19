@@ -9,9 +9,6 @@
  */
 
 import { betterAuth } from "better-auth";
-import { Kysely, PostgresDialect } from "kysely";
-import pkg from "pg";
-const { Pool } = pkg;
 import dotenv from "dotenv";
 
 // Load environment variables
@@ -24,17 +21,6 @@ for (const envVar of REQUIRED_ENV_VARS) {
     throw new Error(`Missing required environment variable: ${envVar}`);
   }
 }
-
-/**
- * Create Kysely Database Instance for PostgreSQL
- */
-const db = new Kysely({
-  dialect: new PostgresDialect({
-    pool: new Pool({
-      connectionString: process.env.DATABASE_URL!,
-    }),
-  }),
-});
 
 /**
  * Better Auth Instance
@@ -56,9 +42,12 @@ export const auth = betterAuth({
 
   /**
    * Database Configuration
-   * Using Kysely with PostgreSQL dialect
+   * Better Auth will handle PostgreSQL connection internally
    */
-  database: db as any,
+  database: {
+    provider: "postgres",
+    url: process.env.DATABASE_URL!,
+  },
 
   /**
    * Email and Password Authentication
