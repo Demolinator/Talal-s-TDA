@@ -84,8 +84,8 @@ class AuthService:
             email=user_data.email,
             name=user_data.name,
             hashed_password=hashed_password,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            createdAt=datetime.utcnow(),  # Better Auth uses camelCase
+            updatedAt=datetime.utcnow(),  # Better Auth uses camelCase
         )
 
         # Persist to database
