@@ -30,7 +30,8 @@ def upgrade() -> None:
     sa.Column('user_id', sa.Uuid(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    # Fixed foreign key reference from 'users.id' to 'user.id'
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_tasks_is_complete'), 'tasks', ['is_complete'], unique=False)

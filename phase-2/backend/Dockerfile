@@ -23,6 +23,10 @@ RUN uv pip install --system --no-cache -r pyproject.toml
 COPY src/ ./src/
 COPY alembic.ini ./
 
+# Explicitly ensure migrations are included (critical for Railway deployment)
+# The .dockerignore may exclude test files, so we verify migrations are present
+RUN test -d src/db/migrations/versions || (echo "ERROR: Migration files missing!" && exit 1)
+
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash appuser \
     && chown -R appuser:appuser /app

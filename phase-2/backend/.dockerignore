@@ -74,6 +74,9 @@ phase2_todo.db
 .pytest_cache/
 tests/
 test_*.py
+# IMPORTANT: DO NOT exclude migration files from src/db/migrations/
+# Railway needs these to run database migrations on deployment
+!src/db/migrations/versions/*.py
 
 # Documentation
 docs/
