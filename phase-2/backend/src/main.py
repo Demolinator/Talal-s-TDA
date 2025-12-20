@@ -149,10 +149,11 @@ All endpoints are prefixed with `/api/`.
 )
 
 # CORS Configuration from environment variables
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+# Strip whitespace from each origin to handle potential config issues
+CORS_ORIGINS = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")]
 
-# Get environment
-ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+# Log CORS origins for debugging
+logger.info(f"CORS Origins configured: {CORS_ORIGINS}")
 
 # Add security headers middleware (should be first for all responses)
 app.add_middleware(SecurityHeadersMiddleware)
@@ -161,16 +162,12 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
-# Only enable TrustedHostMiddleware in development (Railway provides its own host validation)
-if ENVIRONMENT == "development":
-    app.add_middleware(
-        TrustedHostMiddleware,
-        allowed_hosts=["localhost", "127.0.0.1", "testserver"]
-    )
+# TrustedHostMiddleware disabled for Railway deployment
+# Railway provides its own host validation at the load balancer level
 
 # Add rate limiting handler
 app.state.limiter = limiter
