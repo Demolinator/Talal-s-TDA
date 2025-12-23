@@ -2,28 +2,34 @@
 Authentication API Endpoints
 
 Thin controllers for user authentication (signup, login, logout).
-Delegates business logic to AuthService.
+Proxies authentication requests to Better Auth server and validates JWT tokens.
 """
 
-from fastapi import APIRouter, Depends, Response, Request
+import os
+import httpx
+from fastapi import APIRouter, Depends, Response, Request, HTTPException
 from fastapi.responses import JSONResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from dotenv import load_dotenv
 
 from src.auth.dependencies import get_current_user
-from src.auth.jwt import create_access_token
 from src.models.user import User, UserCreate, UserLogin, UserResponse
-from src.services.auth_service import AuthService
+
+# Load environment variables
+load_dotenv()
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 
 # Initialize rate limiter
 limiter = Limiter(key_func=get_remote_address)
 
+# Auth server URL (Better Auth)
+AUTH_SERVER_URL = os.getenv("AUTH_SERVER_URL", "http://localhost:3001")
+
 
 @router.post(
     "/signup",
-    response_model=UserResponse,
     status_code=201,
     responses={
         201: {
@@ -31,11 +37,16 @@ limiter = Limiter(key_func=get_remote_address)
             "content": {
                 "application/json": {
                     "example": {
-                        "id": "550e8400-e29b-41d4-a716-446655440000",
-                        "email": "alice@example.com",
-                        "name": "Alice Smith",
-                        "created_at": "2025-12-07T15:30:00Z",
-                        "updated_at": "2025-12-07T15:30:00Z",
+                        "user": {
+                            "id": "550e8400-e29b-41d4-a716-446655440000",
+                            "email": "alice@example.com",
+                            "name": "Alice Smith",
+                            "createdAt": "2025-12-07T15:30:00Z"
+                        },
+                        "session": {
+                            "token": "eyJhbGc...",
+                            "expiresAt": "2025-12-07T15:45:00Z"
+                        }
                     }
                 }
             },
@@ -44,23 +55,7 @@ limiter = Limiter(key_func=get_remote_address)
             "description": "Email already registered",
             "content": {
                 "application/json": {
-                    "example": {"detail": "Email already registered"}
-                }
-            },
-        },
-        422: {
-            "description": "Validation error",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": [
-                            {
-                                "loc": ["body", "email"],
-                                "msg": "value is not a valid email address",
-                                "type": "value_error.email",
-                            }
-                        ]
-                    }
+                    "example": {"error": "Email already registered"}
                 }
             },
         },
@@ -69,26 +64,32 @@ limiter = Limiter(key_func=get_remote_address)
 async def signup(
     user_data: UserCreate,
     response: Response,
-    auth_service: AuthService = Depends(),
-) -> UserResponse:
+):
     """
-    Register a new user account.
+    Register a new user account (proxies to Better Auth server).
 
-    Creates user with hashed password, generates JWT token,
-    and sets HttpOnly cookie for authentication.
+    Forwards signup request to Better Auth server, which handles:
+    - Password hashing (bcrypt)
+    - User creation in database
+    - JWT token generation
+    - Session management
 
     **Request Body:**
     - email: Valid email address (unique)
     - name: User's display name (1-100 characters)
-    - password: Password (min 8 characters)
+    - password: Password (min 6 characters per Better Auth config)
 
     **Response:**
-    - 201: User created successfully (with auth cookie set)
+    - 201: User created successfully (with auth cookie set by Better Auth)
     - 400: Email already registered
-    - 422: Validation error (invalid email, password too short, etc.)
+    - 500: Auth server error
 
-    **Side Effects:**
-    - Sets "auth_token" HttpOnly cookie (15 minutes expiry)
+    **Architecture Flow:**
+    1. Frontend → Backend (this endpoint)
+    2. Backend → Better Auth server (POST /auth/sign-up)
+    3. Better Auth → Neon PostgreSQL (create user)
+    4. Better Auth → Backend (user + session + JWT cookie)
+    5. Backend → Frontend (user data + session + JWT cookie forwarded)
 
     **Example:**
     ```json
@@ -100,38 +101,73 @@ async def signup(
     }
 
     Response 201:
+    Set-Cookie: better-auth.session_token=<JWT>; HttpOnly; Secure
     {
-        "id": "550e8400-e29b-41d4-a716-446655440000",
-        "email": "alice@example.com",
-        "name": "Alice Smith",
-        "created_at": "2025-12-07T15:30:00Z",
-        "updated_at": "2025-12-07T15:30:00Z"
+        "user": {
+            "id": "550e8400-e29b-41d4-a716-446655440000",
+            "email": "alice@example.com",
+            "name": "Alice Smith"
+        },
+        "session": {
+            "token": "eyJhbGc...",
+            "expiresAt": "2025-12-07T15:45:00Z"
+        }
     }
     ```
     """
-    # Delegate business logic to service
-    user = await auth_service.signup(user_data)
+    try:
+        # Proxy signup request to Better Auth server
+        async with httpx.AsyncClient() as client:
+            auth_response = await client.post(
+                f"{AUTH_SERVER_URL}/auth/sign-up",
+                json={
+                    "email": user_data.email,
+                    "name": user_data.name,
+                    "password": user_data.password,
+                },
+                timeout=10.0,  # 10 second timeout
+            )
 
-    # Create JWT access token
-    access_token = create_access_token(user.id, user.email)
+            # If auth server returned error, forward it
+            if auth_response.status_code != 200:
+                return JSONResponse(
+                    status_code=auth_response.status_code,
+                    content=auth_response.json(),
+                )
 
-    # Set HttpOnly cookie (prevents XSS attacks)
-    response.set_cookie(
-        key="auth_token",
-        value=access_token,
-        httponly=True,  # Not accessible via JavaScript
-        secure=True,  # HTTPS only (set False for local development)
-        samesite="strict",  # CSRF protection
-        max_age=15 * 60,  # 15 minutes (matches ACCESS_TOKEN_EXPIRE_MINUTES)
-    )
+            # Extract response data from Better Auth
+            auth_data = auth_response.json()
 
-    # Return user data (excludes hashed_password)
-    return UserResponse.model_validate(user)
+            # Better Auth returns JWT token in session.token
+            # Set it as "auth_token" cookie for backend consistency
+            if "session" in auth_data and "token" in auth_data["session"]:
+                jwt_token = auth_data["session"]["token"]
+                response.set_cookie(
+                    key="auth_token",
+                    value=jwt_token,
+                    httponly=True,
+                    secure=True,  # HTTPS only
+                    samesite="lax",  # Allow cross-site for auth flow
+                    max_age=15 * 60,  # 15 minutes
+                )
+
+            # Return successful response from Better Auth
+            return auth_data
+
+    except httpx.TimeoutException:
+        raise HTTPException(
+            status_code=504,
+            detail="Auth server timeout - please try again",
+        )
+    except httpx.RequestError as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Auth server unavailable: {str(e)}",
+        )
 
 
 @router.post(
     "/login",
-    response_model=UserResponse,
     status_code=200,
     responses={
         200: {
@@ -139,11 +175,15 @@ async def signup(
             "content": {
                 "application/json": {
                     "example": {
-                        "id": "550e8400-e29b-41d4-a716-446655440000",
-                        "email": "alice@example.com",
-                        "name": "Alice Smith",
-                        "created_at": "2025-12-07T15:30:00Z",
-                        "updated_at": "2025-12-07T15:30:00Z",
+                        "user": {
+                            "id": "550e8400-e29b-41d4-a716-446655440000",
+                            "email": "alice@example.com",
+                            "name": "Alice Smith"
+                        },
+                        "session": {
+                            "token": "eyJhbGc...",
+                            "expiresAt": "2025-12-07T15:45:00Z"
+                        }
                     }
                 }
             },
@@ -152,7 +192,7 @@ async def signup(
             "description": "Invalid credentials",
             "content": {
                 "application/json": {
-                    "example": {"detail": "Invalid email or password"}
+                    "example": {"error": "Invalid email or password"}
                 }
             },
         },
@@ -160,7 +200,7 @@ async def signup(
             "description": "Rate limit exceeded",
             "content": {
                 "application/json": {
-                    "example": {"detail": "Rate limit exceeded: 5 per 1 minute"}
+                    "example": {"error": "Rate limit exceeded: 5 per 1 minute"}
                 }
             },
         },
@@ -171,28 +211,36 @@ async def login(
     request: Request,
     credentials: UserLogin,
     response: Response,
-    auth_service: AuthService = Depends(),
-) -> UserResponse:
+):
     """
-    Login with email and password.
+    Login with email and password (proxies to Better Auth server).
 
-    Authenticates user and sets JWT token in HttpOnly cookie.
+    Forwards login request to Better Auth server, which handles:
+    - Password verification (bcrypt)
+    - JWT token generation
+    - Session creation
 
     **Request Body:**
     - email: User's email address
     - password: User's password
 
     **Response:**
-    - 200: Login successful (with auth cookie set)
+    - 200: Login successful (with auth cookie set by Better Auth)
     - 401: Invalid email or password
+    - 429: Rate limit exceeded (5 attempts per minute)
+    - 503: Auth server unavailable
 
-    **Side Effects:**
-    - Sets "auth_token" HttpOnly cookie (15 minutes expiry)
+    **Architecture Flow:**
+    1. Frontend → Backend (this endpoint)
+    2. Backend → Better Auth server (POST /auth/sign-in/email)
+    3. Better Auth → Neon PostgreSQL (verify user)
+    4. Better Auth → Backend (user + session + JWT cookie)
+    5. Backend → Frontend (user data + session + JWT cookie forwarded)
 
     **Security:**
-    - Passwords are never stored in plaintext
-    - Bcrypt hashing with salt
+    - Passwords verified against bcrypt hash in database
     - Error messages don't reveal whether email exists
+    - Rate limited to prevent brute force attacks
 
     **Example:**
     ```json
@@ -203,33 +251,68 @@ async def login(
     }
 
     Response 200:
+    Set-Cookie: better-auth.session_token=<JWT>; HttpOnly; Secure
     {
-        "id": "550e8400-e29b-41d4-a716-446655440000",
-        "email": "alice@example.com",
-        "name": "Alice Smith",
-        "created_at": "2025-12-07T15:30:00Z",
-        "updated_at": "2025-12-07T15:30:00Z"
+        "user": {
+            "id": "550e8400-e29b-41d4-a716-446655440000",
+            "email": "alice@example.com",
+            "name": "Alice Smith"
+        },
+        "session": {
+            "token": "eyJhbGc...",
+            "expiresAt": "2025-12-07T15:45:00Z"
+        }
     }
     ```
     """
-    # Delegate authentication to service
-    user = await auth_service.login(credentials.email, credentials.password)
+    try:
+        # Proxy login request to Better Auth server
+        async with httpx.AsyncClient() as client:
+            auth_response = await client.post(
+                f"{AUTH_SERVER_URL}/auth/sign-in/email",
+                json={
+                    "email": credentials.email,
+                    "password": credentials.password,
+                },
+                timeout=10.0,
+            )
 
-    # Create JWT access token
-    access_token = create_access_token(user.id, user.email)
+            # If auth server returned error, forward it
+            if auth_response.status_code != 200:
+                return JSONResponse(
+                    status_code=auth_response.status_code,
+                    content=auth_response.json(),
+                )
 
-    # Set HttpOnly cookie
-    response.set_cookie(
-        key="auth_token",
-        value=access_token,
-        httponly=True,
-        secure=True,  # HTTPS only (set False for local development)
-        samesite="strict",
-        max_age=15 * 60,  # 15 minutes
-    )
+            # Extract response data from Better Auth
+            auth_data = auth_response.json()
 
-    # Return user data
-    return UserResponse.model_validate(user)
+            # Better Auth returns JWT token in session.token
+            # Set it as "auth_token" cookie for backend consistency
+            if "session" in auth_data and "token" in auth_data["session"]:
+                jwt_token = auth_data["session"]["token"]
+                response.set_cookie(
+                    key="auth_token",
+                    value=jwt_token,
+                    httponly=True,
+                    secure=True,  # HTTPS only
+                    samesite="lax",  # Allow cross-site for auth flow
+                    max_age=15 * 60,  # 15 minutes
+                )
+
+            # Return successful response from Better Auth
+            return auth_data
+
+    except httpx.TimeoutException:
+        raise HTTPException(
+            status_code=504,
+            detail="Auth server timeout - please try again",
+        )
+    except httpx.RequestError as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Auth server unavailable: {str(e)}",
+        )
 
 
 @router.post(
