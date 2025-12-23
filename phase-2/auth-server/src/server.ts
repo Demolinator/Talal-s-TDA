@@ -87,14 +87,14 @@ app.get("/api/auth/health", (req: Request, res: Response) => {
 /**
  * Better Auth Routes
  *
- * Mount Better Auth handler at /auth
+ * Mount Better Auth handler at /api/auth (Better Auth default)
  * Provides endpoints:
- * - POST /auth/sign-up (create account)
- * - POST /auth/sign-in/email (login)
- * - POST /auth/sign-out (logout)
- * - GET /auth/get-session (current user)
+ * - POST /api/auth/sign-up (create account)
+ * - POST /api/auth/sign-in/email (login)
+ * - POST /api/auth/sign-out (logout)
+ * - GET /api/auth/get-session (current user)
  */
-app.use("/auth", toNodeHandler(auth));
+app.use("/api/auth", toNodeHandler(auth));
 
 /**
  * 404 Handler
@@ -105,10 +105,10 @@ app.use((req: Request, res: Response) => {
     message: `Cannot ${req.method} ${req.path}`,
     availableRoutes: [
       "GET /health",
-      "POST /auth/sign-up",
-      "POST /auth/sign-in/email",
-      "POST /auth/sign-out",
-      "GET /auth/get-session",
+      "POST /api/auth/sign-up",
+      "POST /api/auth/sign-in/email",
+      "POST /api/auth/sign-out",
+      "GET /api/auth/get-session",
     ],
   });
 });
