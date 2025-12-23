@@ -94,7 +94,7 @@ app.get("/api/auth/health", (req: Request, res: Response) => {
  * - POST /auth/sign-out (logout)
  * - GET /auth/get-session (current user)
  */
-app.all("/auth/*", toNodeHandler(auth));
+app.use("/auth", toNodeHandler(auth));
 
 /**
  * 404 Handler
