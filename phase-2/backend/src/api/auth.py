@@ -119,7 +119,7 @@ async def signup(
         # Proxy signup request to Better Auth server
         async with httpx.AsyncClient() as client:
             auth_response = await client.post(
-                f"{AUTH_SERVER_URL}/auth/sign-up",
+                f"{AUTH_SERVER_URL}/api/auth/sign-up",
                 json={
                     "email": user_data.email,
                     "name": user_data.name,
@@ -269,7 +269,7 @@ async def login(
         # Proxy login request to Better Auth server
         async with httpx.AsyncClient() as client:
             auth_response = await client.post(
-                f"{AUTH_SERVER_URL}/auth/sign-in/email",
+                f"{AUTH_SERVER_URL}/api/auth/sign-in/email",
                 json={
                     "email": credentials.email,
                     "password": credentials.password,
