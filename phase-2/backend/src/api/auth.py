@@ -29,7 +29,7 @@ AUTH_SERVER_URL = os.getenv("AUTH_SERVER_URL", "http://localhost:3001")
 
 
 @router.post(
-    "/signup",
+    "/sign-up/email",
     status_code=201,
     responses={
         201: {
@@ -167,7 +167,7 @@ async def signup(
 
 
 @router.post(
-    "/login",
+    "/sign-in/email",
     status_code=200,
     responses={
         200: {
@@ -316,7 +316,7 @@ async def login(
 
 
 @router.post(
-    "/logout",
+    "/sign-out",
     status_code=204,
     responses={
         204: {
@@ -374,7 +374,7 @@ async def logout(
 
 
 @router.get(
-    "/me",
+    "/get-session",
     response_model=UserResponse,
     status_code=200,
     responses={

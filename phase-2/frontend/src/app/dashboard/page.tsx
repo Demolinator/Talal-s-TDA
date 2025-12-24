@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getCurrentUser, signOut, type User } from "@/lib/auth";
-import { getTasks, createTask, updateTask, deleteTask, toggleTaskComplete, type Task, type TaskCreate } from "@/lib/api";
+import { getCurrentUser, signOut } from "@/lib/auth";
+import { type User } from "@/types/user";
+import { getTasks, createTask, updateTask, deleteTask, type Task, type TaskCreate } from "@/lib/api";
 import { TaskForm } from "@/components/tasks/TaskForm";
 import { TaskList } from "@/components/tasks/TaskList";
 
@@ -22,11 +23,13 @@ export default function DashboardPage() {
     async function loadUserAndTasks() {
       try {
         const session = await getCurrentUser();
-        if (!session?.user) {
+        // Better Auth returns { data: { user, session } } or { error }
+        const sessionData = (session as any)?.data;
+        if (!sessionData?.user) {
           router.push("/login");
           return;
         }
-        setUser(session.user);
+        setUser(sessionData.user as User);
 
         // Load tasks
         const tasksData = await getTasks();
