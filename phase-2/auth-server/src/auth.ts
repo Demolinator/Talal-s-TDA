@@ -34,7 +34,7 @@ export const auth = betterAuth({
    */
   appName: "Phase II Todo Application",
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3001",
-  // Using default basePath: "/api/auth" (no explicit setting needed)
+  basePath: "/", // Empty basePath since we mount at /api/auth in server.ts
 
   /**
    * Secret for JWT token signing
