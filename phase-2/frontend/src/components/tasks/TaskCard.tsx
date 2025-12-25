@@ -9,8 +9,8 @@
  */
 
 "use client";
+import { useState } from "react";
 
-import * as React from "react";
 import { Trash2, Edit2, Check } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -31,9 +31,9 @@ export function TaskCard({
   onDelete,
   onEdit,
 }: TaskCardProps) {
-  const [isDeleting, setIsDeleting] = React.useState(false);
-  const [isToggling, setIsToggling] = React.useState(false);
-  const [showActions, setShowActions] = React.useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isToggling, setIsToggling] = useState(false);
+  const [showActions, setShowActions] = useState(false);
 
   const handleToggleComplete = async () => {
     setIsToggling(true);

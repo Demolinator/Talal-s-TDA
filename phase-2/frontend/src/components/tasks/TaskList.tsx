@@ -10,7 +10,6 @@
 
 "use client";
 
-import * as React from "react";
 import { TaskCard } from "./TaskCard";
 import { EmptyState } from "./EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";

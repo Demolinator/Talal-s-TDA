@@ -10,8 +10,8 @@
  */
 
 "use client";
+import { useState, useEffect } from "react";
 
-import * as React from "react";
 import { TaskList } from "@/components/tasks/TaskList";
 import { TaskForm } from "@/components/tasks/TaskForm";
 import { Header } from "@/components/layout/Header";
@@ -38,14 +38,14 @@ import { cn } from "@/lib/utils";
 type FilterType = "all" | "pending" | "completed";
 
 export default function DashboardPage() {
-  const [tasks, setTasks] = React.useState<Task[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [filter, setFilter] = React.useState<FilterType>("all");
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-  const [editingTask, setEditingTask] = React.useState<Task | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filter, setFilter] = useState<FilterType>("all");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   // Load tasks on mount
-  React.useEffect(() => {
+  useEffect(() => {
     loadTasks();
   }, []);
 

@@ -10,8 +10,8 @@
 
 "use client";
 
-import * as React from "react";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import { CheckCircle2, Plus, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,10 +33,10 @@ interface HeaderProps {
 
 export function Header({ onAddTask }: HeaderProps) {
   const router = useRouter();
-  const [user, setUser] = React.useState<any>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  React.useEffect(() => {
+  useEffect(() => {
     async function loadUser() {
       try {
         const session = await authClient.getSession();
