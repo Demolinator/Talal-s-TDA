@@ -81,6 +81,12 @@ app.get("/api/auth/health", (req: Request, res: Response) => {
   });
 });
 
+// Debug middleware: log all incoming requests
+app.use((req: Request, res: Response, next: NextFunction) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  next();
+});
+
 /**
  * Better Auth Routes
  *
