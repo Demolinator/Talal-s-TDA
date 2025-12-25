@@ -2,6 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+
+  // Generate new build IDs to bypass CDN cache
+  generateBuildId: async () => {
+    return `build-${Date.now()}`;
+  },
+
   experimental: {
     // Reduce hydration errors from browser extensions
     optimizePackageImports: ["@radix-ui/react-dialog", "@radix-ui/react-slot"],
