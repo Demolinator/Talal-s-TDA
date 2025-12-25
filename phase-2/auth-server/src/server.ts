@@ -87,13 +87,15 @@ app.get("/api/auth/health", (req: Request, res: Response) => {
  * CRITICAL: Mounted BEFORE express.json() middleware
  * Better Auth needs raw request bodies for authentication
  *
+ * Mounted at root "/" - Better Auth handles /api/auth internally via basePath
+ *
  * Provides endpoints:
  * - POST /api/auth/sign-up (create account)
  * - POST /api/auth/sign-in/email (login)
  * - POST /api/auth/sign-out (logout)
  * - GET /api/auth/get-session (current user)
  */
-app.use("/api/auth", toNodeHandler(auth));
+app.use("/", toNodeHandler(auth));
 
 /**
  * JSON Body Parser
