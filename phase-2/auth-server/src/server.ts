@@ -33,9 +33,6 @@ const app = express();
  * Middleware Configuration
  */
 
-// Parse JSON request bodies
-app.use(express.json());
-
 // CORS Configuration
 // Allow frontend to make authenticated cross-origin requests
 const CORS_ORIGINS = process.env.CORS_ORIGINS?.split(",") || [
@@ -87,7 +84,9 @@ app.get("/api/auth/health", (req: Request, res: Response) => {
 /**
  * Better Auth Routes
  *
- * Mount Better Auth handler at /api/auth (Better Auth default)
+ * CRITICAL: Mounted BEFORE express.json() middleware
+ * Better Auth needs raw request bodies for authentication
+ *
  * Provides endpoints:
  * - POST /api/auth/sign-up (create account)
  * - POST /api/auth/sign-in/email (login)
@@ -95,6 +94,13 @@ app.get("/api/auth/health", (req: Request, res: Response) => {
  * - GET /api/auth/get-session (current user)
  */
 app.use("/api/auth", toNodeHandler(auth));
+
+/**
+ * JSON Body Parser
+ *
+ * IMPORTANT: Placed AFTER Better Auth to avoid consuming request stream
+ */
+app.use(express.json());
 
 /**
  * 404 Handler
