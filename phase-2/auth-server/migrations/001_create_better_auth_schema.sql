@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS "user" (
 CREATE TABLE IF NOT EXISTS "session" (
   "id" TEXT PRIMARY KEY,
   "userId" TEXT NOT NULL,
+  "token" TEXT NOT NULL UNIQUE,
   "expiresAt" TIMESTAMP NOT NULL,
   "ipAddress" TEXT,
   "userAgent" TEXT,
