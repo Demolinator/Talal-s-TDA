@@ -5,9 +5,11 @@
  * Uses HttpOnly cookies for authentication (set by Better Auth server).
  *
  * @see frontend/CLAUDE.md for API integration patterns
+ *
+ * CACHE BUST: v2.0 - HTTPS enforced
  */
 
-// Production backend URL (Railway)
+// Production backend URL (Railway) - HARDCODED HTTPS
 const PRODUCTION_API_URL = "https://tda-backend-production.up.railway.app";
 
 // Development backend URL (local)
