@@ -25,7 +25,10 @@ router = APIRouter(prefix="/api/auth", tags=["authentication"])
 limiter = Limiter(key_func=get_remote_address)
 
 # Auth server URL (Better Auth)
+# CRITICAL: Must be set in Railway environment variables
+# Default to localhost for local development only
 AUTH_SERVER_URL = os.getenv("AUTH_SERVER_URL", "http://localhost:3001")
+print(f"🔗 Backend using AUTH_SERVER_URL: {AUTH_SERVER_URL}")  # Debug log
 
 
 @router.post(
