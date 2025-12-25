@@ -26,12 +26,13 @@ import { createAuthClient } from "better-auth/react";
  * - GET /api/auth/me → Better Auth GET /api/auth/get-session
  */
 export const authClient = createAuthClient({
-  // FastAPI backend URL with /api/auth prefix (which proxies to Better Auth server)
-  baseURL: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/auth`,
+  // IMPORTANT: Call auth server DIRECTLY (not through backend proxy)
+  // Cross-domain cookies require direct communication with auth server
+  baseURL: process.env.NEXT_PUBLIC_AUTH_SERVER_URL || "http://localhost:3001",
 
   // Include credentials (cookies) in requests
   fetchOptions: {
-    credentials: "include", // Required for HttpOnly cookies (auth_token)
+    credentials: "include", // Required for HttpOnly cookies
   },
 });
 
