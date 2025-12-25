@@ -1,7 +1,22 @@
+/**
+ * TaskCard Component
+ *
+ * Individual task card with:
+ * - Glassmorphism effect
+ * - Completion checkbox
+ * - Edit and delete actions
+ * - Smooth animations
+ */
+
 "use client";
 
-import { Task } from "@/types/task";
-import { useState } from "react";
+import * as React from "react";
+import { Trash2, Edit2, Check } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import type { Task } from "@/types/task";
 
 interface TaskCardProps {
   task: Task;
@@ -10,11 +25,17 @@ interface TaskCardProps {
   onEdit?: (task: Task) => void;
 }
 
-export function TaskCard({ task, onToggleComplete, onDelete, onEdit }: TaskCardProps) {
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isToggling, setIsToggling] = useState(false);
+export function TaskCard({
+  task,
+  onToggleComplete,
+  onDelete,
+  onEdit,
+}: TaskCardProps) {
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [isToggling, setIsToggling] = React.useState(false);
+  const [showActions, setShowActions] = React.useState(false);
 
-  const handleToggle = async () => {
+  const handleToggleComplete = async () => {
     setIsToggling(true);
     try {
       await onToggleComplete(task.id, !task.is_complete);
@@ -24,112 +45,119 @@ export function TaskCard({ task, onToggleComplete, onDelete, onEdit }: TaskCardP
   };
 
   const handleDelete = async () => {
-    if (!confirm(`Are you sure you want to delete "${task.title}"?`)) {
-      return;
-    }
-
     setIsDeleting(true);
     try {
       await onDelete(task.id);
     } catch (error) {
       setIsDeleting(false);
-      alert(error instanceof Error ? error.message : "Failed to delete task");
     }
   };
 
-  const formattedDate = new Date(task.created_at).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-
   return (
-    <div
-      className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-l-4 transition-all ${
-        task.is_complete
-          ? "border-green-500 opacity-75"
-          : "border-blue-500"
-      } ${isDeleting ? "opacity-50 scale-95" : ""}`}
+    <Card
+      className={cn(
+        "group relative overflow-hidden transition-all duration-300",
+        "bg-white/60 backdrop-blur-md border border-neutral-200/50",
+        "dark:bg-neutral-900/60 dark:border-neutral-800/50",
+        "hover:shadow-lg hover:scale-[1.02]",
+        task.is_complete && "opacity-75",
+        isDeleting && "opacity-50 pointer-events-none"
+      )}
+      onMouseEnter={() => setShowActions(true)}
+      onMouseLeave={() => setShowActions(false)}
     >
-      <div className="flex items-start gap-3">
-        {/* Checkbox */}
-        <button
-          onClick={handleToggle}
-          disabled={isToggling || isDeleting}
-          className="mt-1 flex-shrink-0 w-5 h-5 rounded border-2 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
-          aria-label={task.is_complete ? "Mark as incomplete" : "Mark as complete"}
-        >
-          {task.is_complete && (
-            <svg className="w-full h-full text-green-600" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                clipRule="evenodd"
-              />
-            </svg>
-          )}
-        </button>
+      {/* Completion animation overlay */}
+      {task.is_complete && (
+        <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 to-emerald-500/10 dark:from-green-500/5 dark:to-emerald-500/5" />
+      )}
 
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <h3
-            className={`text-lg font-medium ${
-              task.is_complete
-                ? "line-through text-gray-500 dark:text-gray-400"
-                : "text-gray-900 dark:text-gray-100"
-            }`}
-          >
-            {task.title}
-          </h3>
+      <CardContent className="p-4">
+        <div className="flex items-start gap-3">
+          {/* Checkbox */}
+          <div className="mt-0.5">
+            <Checkbox
+              checked={task.is_complete}
+              onCheckedChange={handleToggleComplete}
+              disabled={isToggling || isDeleting}
+              className={cn(
+                "h-5 w-5 rounded-md transition-all duration-200",
+                task.is_complete &&
+                  "bg-gradient-to-br from-green-500 to-emerald-600 border-green-500"
+              )}
+            />
+          </div>
 
-          {task.description && (
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
-              {task.description}
-            </p>
-          )}
-
-          <p className="mt-2 text-xs text-gray-500 dark:text-gray-500">
-            Created on {formattedDate}
-          </p>
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-2">
-          {onEdit && (
-            <button
-              onClick={() => onEdit(task)}
-              disabled={isDeleting}
-              className="p-2 text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded disabled:opacity-50 transition-colors"
-              aria-label="Edit task"
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <h3
+              className={cn(
+                "text-base font-semibold text-neutral-900 dark:text-neutral-100 transition-all duration-200",
+                task.is_complete && "line-through text-neutral-500 dark:text-neutral-400"
+              )}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                />
-              </svg>
-            </button>
-          )}
+              {task.title}
+            </h3>
+            {task.description && (
+              <p
+                className={cn(
+                  "mt-1 text-sm text-neutral-600 dark:text-neutral-400 transition-all duration-200 line-clamp-2",
+                  task.is_complete && "text-neutral-500 dark:text-neutral-500"
+                )}
+              >
+                {task.description}
+              </p>
+            )}
+            <div className="mt-2 flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+              <time dateTime={task.created_at}>
+                {new Date(task.created_at).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </time>
+            </div>
+          </div>
 
-          <button
-            onClick={handleDelete}
-            disabled={isDeleting || isToggling}
-            className="p-2 text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 focus:outline-none focus:ring-2 focus:ring-red-500 rounded disabled:opacity-50 transition-colors"
-            aria-label="Delete task"
+          {/* Action Buttons */}
+          <div
+            className={cn(
+              "flex items-center gap-1 transition-all duration-200",
+              showActions ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none",
+              "sm:opacity-100 sm:translate-x-0 sm:pointer-events-auto"
+            )}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-              />
-            </svg>
-          </button>
+            {onEdit && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onEdit(task)}
+                disabled={isDeleting}
+                className="h-8 w-8 text-neutral-600 hover:text-blue-600 hover:bg-blue-50 dark:text-neutral-400 dark:hover:text-blue-400 dark:hover:bg-blue-950/50"
+              >
+                <Edit2 className="h-4 w-4" />
+                <span className="sr-only">Edit task</span>
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="h-8 w-8 text-neutral-600 hover:text-red-600 hover:bg-red-50 dark:text-neutral-400 dark:hover:text-red-400 dark:hover:bg-red-950/50"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span className="sr-only">Delete task</span>
+            </Button>
+          </div>
         </div>
-      </div>
-    </div>
+
+        {/* Completion badge */}
+        {task.is_complete && (
+          <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-600 shadow-md">
+            <Check className="h-3.5 w-3.5 text-white" />
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
