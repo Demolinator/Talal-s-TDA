@@ -160,9 +160,13 @@ async def signup(
             detail="Auth server timeout - please try again",
         )
     except httpx.RequestError as e:
+        # Log detailed error for debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to connect to auth server at {AUTH_SERVER_URL}: {type(e).__name__}: {str(e)}")
         raise HTTPException(
             status_code=503,
-            detail=f"Auth server unavailable: {str(e)}",
+            detail=f"Auth server unavailable: {type(e).__name__} - {str(e)}",
         )
 
 
@@ -309,9 +313,13 @@ async def login(
             detail="Auth server timeout - please try again",
         )
     except httpx.RequestError as e:
+        # Log detailed error for debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to connect to auth server at {AUTH_SERVER_URL}: {type(e).__name__}: {str(e)}")
         raise HTTPException(
             status_code=503,
-            detail=f"Auth server unavailable: {str(e)}",
+            detail=f"Auth server unavailable: {type(e).__name__} - {str(e)}",
         )
 
 
