@@ -30,6 +30,13 @@ const AUTH_SERVER_URL =
   process.env.NEXT_PUBLIC_AUTH_URL ||
   "https://auth-server-production-8251.up.railway.app";
 
+// Debug logging to verify the URL being used
+if (typeof window !== "undefined") {
+  console.log("🔍 AUTH CLIENT DEBUG:");
+  console.log("  process.env.NEXT_PUBLIC_AUTH_URL:", process.env.NEXT_PUBLIC_AUTH_URL);
+  console.log("  AUTH_SERVER_URL:", AUTH_SERVER_URL);
+}
+
 // Local development: set NEXT_PUBLIC_AUTH_URL=http://localhost:3001 in .env.local
 
 export const authClient = createAuthClient({

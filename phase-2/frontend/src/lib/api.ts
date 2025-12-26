@@ -15,6 +15,13 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   "https://tda-backend-production.up.railway.app";
 
+// Debug logging to verify the URL being used
+if (typeof window !== "undefined") {
+  console.log("🔍 API CLIENT DEBUG:");
+  console.log("  process.env.NEXT_PUBLIC_API_URL:", process.env.NEXT_PUBLIC_API_URL);
+  console.log("  API_BASE_URL:", API_BASE_URL);
+}
+
 // Local development: set NEXT_PUBLIC_API_URL=http://localhost:8000 in .env.local
 
 /**
