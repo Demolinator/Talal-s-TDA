@@ -10,20 +10,13 @@
  * Last updated: 2025-12-26 00:30 UTC
  */
 
-// Production backend URL (Railway) - HARDCODED HTTPS ONLY
-// CRITICAL: This is hardcoded to ensure HTTPS is ALWAYS used in production
-// NO environment variables can override this in production builds
-const PRODUCTION_API_URL = "https://tda-backend-production.up.railway.app";
+// CRITICAL: ALWAYS USE HTTPS - NO EXCEPTIONS
+// This URL is used in ALL environments (development, staging, production)
+// For local development, comment this line and uncomment the localhost line below
+const API_BASE_URL = "https://tda-backend-production.up.railway.app";
 
-// Development backend URL (local)
-const DEVELOPMENT_API_URL = "http://localhost:8000";
-
-// CRITICAL: In production, ALWAYS use hardcoded HTTPS URL
-// IGNORE all environment variables to prevent Mixed Content errors
-const API_BASE_URL =
-  process.env.NODE_ENV === "production"
-    ? PRODUCTION_API_URL  // Hardcoded HTTPS - no env var check
-    : (process.env.NEXT_PUBLIC_API_URL || DEVELOPMENT_API_URL);
+// Uncomment for local development only:
+// const API_BASE_URL = "http://localhost:8000";
 
 /**
  * Custom error class for API errors

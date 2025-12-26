@@ -25,17 +25,16 @@ import { createAuthClient } from "better-auth/react";
  * - POST /api/auth/logout → Clears auth_token cookie
  * - GET /api/auth/me → Better Auth GET /api/auth/get-session
  */
-// Auth server URLs
-const PRODUCTION_AUTH_URL = "https://auth-server-production-8251.up.railway.app";
-const DEVELOPMENT_AUTH_URL = "http://localhost:3001";
+// CRITICAL: ALWAYS USE HTTPS - NO EXCEPTIONS
+// This URL is used in ALL environments
+const AUTH_SERVER_URL = "https://auth-server-production-8251.up.railway.app";
+
+// Uncomment for local development only:
+// const AUTH_SERVER_URL = "http://localhost:3001";
 
 export const authClient = createAuthClient({
-  // CRITICAL: In production, ALWAYS use hardcoded HTTPS auth server URL
-  // IGNORE environment variables to prevent Mixed Content errors
-  baseURL:
-    process.env.NODE_ENV === "production"
-      ? PRODUCTION_AUTH_URL  // Hardcoded HTTPS - no env var check
-      : (process.env.NEXT_PUBLIC_AUTH_SERVER_URL || DEVELOPMENT_AUTH_URL),
+  // ALWAYS use HTTPS auth server URL - no conditional logic
+  baseURL: AUTH_SERVER_URL,
 
   // Include credentials (cookies) in requests
   fetchOptions: {
