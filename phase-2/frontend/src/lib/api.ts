@@ -6,12 +6,13 @@
  *
  * @see frontend/CLAUDE.md for API integration patterns
  *
- * CACHE BUST: v2.0 - HTTPS enforced
+ * CACHE BUST: v3.0 - HTTPS ENFORCED - NO HTTP ALLOWED
+ * Last updated: 2025-12-26 00:30 UTC
  */
 
-// Production backend URL (Railway) - HARDCODED HTTPS
+// Production backend URL (Railway) - HARDCODED HTTPS ONLY
 // CRITICAL: This is hardcoded to ensure HTTPS is ALWAYS used in production
-// regardless of any environment variables
+// NO environment variables can override this in production builds
 const PRODUCTION_API_URL = "https://tda-backend-production.up.railway.app";
 
 // Development backend URL (local)
