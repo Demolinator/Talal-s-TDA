@@ -3,9 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
 
-  // Generate new build IDs to bypass CDN cache
+  // Generate unique build IDs to bypass ALL caches
   generateBuildId: async () => {
-    return `build-${Date.now()}`;
+    return `build-${Date.now()}-${Math.random().toString(36).substring(7)}`;
   },
 
   experimental: {
@@ -16,8 +16,8 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   // Handle browser extension conflicts
   compiler: {
-    // Remove console logs in production
-    removeConsole: process.env.NODE_ENV === "production",
+    // TEMPORARILY DISABLE - Need console logs for debugging
+    // removeConsole: process.env.NODE_ENV === "production",
   },
   // Turbopack configuration (Next.js 16+)
   turbopack: {
