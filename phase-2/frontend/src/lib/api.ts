@@ -10,13 +10,12 @@
  * Last updated: 2025-12-26 00:30 UTC
  */
 
-// CRITICAL: ALWAYS USE HTTPS - NO EXCEPTIONS
-// This URL is used in ALL environments (development, staging, production)
-// For local development, comment this line and uncomment the localhost line below
-const API_BASE_URL = "https://tda-backend-production.up.railway.app";
+// Use environment variable from Vercel, fallback to production URL
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://tda-backend-production.up.railway.app";
 
-// Uncomment for local development only:
-// const API_BASE_URL = "http://localhost:8000";
+// Local development: set NEXT_PUBLIC_API_URL=http://localhost:8000 in .env.local
 
 /**
  * Custom error class for API errors

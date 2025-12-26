@@ -25,12 +25,12 @@ import { createAuthClient } from "better-auth/react";
  * - POST /api/auth/logout → Clears auth_token cookie
  * - GET /api/auth/me → Better Auth GET /api/auth/get-session
  */
-// CRITICAL: ALWAYS USE HTTPS - NO EXCEPTIONS
-// This URL is used in ALL environments
-const AUTH_SERVER_URL = "https://auth-server-production-8251.up.railway.app";
+// Use environment variable from Vercel, fallback to production URL
+const AUTH_SERVER_URL =
+  process.env.NEXT_PUBLIC_AUTH_URL ||
+  "https://auth-server-production-8251.up.railway.app";
 
-// Uncomment for local development only:
-// const AUTH_SERVER_URL = "http://localhost:3001";
+// Local development: set NEXT_PUBLIC_AUTH_URL=http://localhost:3001 in .env.local
 
 export const authClient = createAuthClient({
   // ALWAYS use HTTPS auth server URL - no conditional logic
