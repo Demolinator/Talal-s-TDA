@@ -43,14 +43,20 @@ class HTTPSRedirectMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
 
+        # Log ALL responses for debugging
+        logger.info(f"HTTPSRedirectMiddleware: {request.method} {request.url.path} → {response.status_code}")
+
         # Fix redirect Location headers to use HTTPS
         if response.status_code in (301, 302, 303, 307, 308):
             location = response.headers.get("location", "")
+            logger.info(f"Redirect detected! Location header: {location}")
             if location.startswith("http://"):
                 # Replace http:// with https://
                 fixed_location = location.replace("http://", "https://", 1)
                 response.headers["location"] = fixed_location
-                logger.info(f"Fixed redirect: {location} → {fixed_location}")
+                logger.info(f"✅ Fixed redirect: {location} → {fixed_location}")
+            else:
+                logger.info(f"⚠️ Location already HTTPS or empty: {location}")
 
         return response
 
