@@ -20,28 +20,28 @@ import { createAuthClient } from "better-auth/react";
  * Frontend → FastAPI Backend (/api/auth/*) → Better Auth Server
  *
  * The FastAPI backend acts as a proxy to the Better Auth server:
- * - POST /api/auth/signup → Better Auth POST /api/auth/sign-up
- * - POST /api/auth/login → Better Auth POST /api/auth/sign-in/email
- * - POST /api/auth/logout → Clears auth_token cookie
- * - GET /api/auth/me → Better Auth GET /api/auth/get-session
+ * - POST /api/auth/sign-up/email → Better Auth POST /api/auth/sign-up
+ * - POST /api/auth/sign-in/email → Better Auth POST /api/auth/sign-in/email
+ * - POST /api/auth/sign-out → Clears auth_token cookie
+ * - GET /api/auth/get-session → Better Auth GET /api/auth/get-session
  */
-// Use environment variable from Vercel, fallback to production URL
-const AUTH_SERVER_URL =
-  process.env.NEXT_PUBLIC_AUTH_URL ||
-  "https://auth-server-production-8251.up.railway.app";
+// CRITICAL: Must use BACKEND URL (not auth server URL) so cookies are set on backend domain
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://tda-backend-production.up.railway.app";
 
 // Debug logging to verify the URL being used
 if (typeof window !== "undefined") {
   console.log("🔍 AUTH CLIENT DEBUG:");
-  console.log("  process.env.NEXT_PUBLIC_AUTH_URL:", process.env.NEXT_PUBLIC_AUTH_URL);
-  console.log("  AUTH_SERVER_URL:", AUTH_SERVER_URL);
+  console.log("  process.env.NEXT_PUBLIC_API_URL:", process.env.NEXT_PUBLIC_API_URL);
+  console.log("  BACKEND_URL:", BACKEND_URL);
 }
 
-// Local development: set NEXT_PUBLIC_AUTH_URL=http://localhost:3001 in .env.local
+// Local development: set NEXT_PUBLIC_API_URL=http://localhost:8000 in .env.local
 
 export const authClient = createAuthClient({
-  // ALWAYS use HTTPS auth server URL - no conditional logic
-  baseURL: AUTH_SERVER_URL,
+  // CRITICAL: Use BACKEND URL (not auth server) so auth_token cookie is set on backend domain
+  baseURL: BACKEND_URL,
 
   // Include credentials (cookies) in requests
   fetchOptions: {
