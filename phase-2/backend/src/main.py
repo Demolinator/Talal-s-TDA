@@ -32,6 +32,29 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+class HTTPSRedirectMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware to force HTTPS in redirect responses.
+
+    Railway's reverse proxy handles HTTPS but FastAPI's redirect_slashes
+    generates HTTP redirect URLs. This middleware fixes the Location header.
+    """
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+
+        # Fix redirect Location headers to use HTTPS
+        if response.status_code in (301, 302, 303, 307, 308):
+            location = response.headers.get("location", "")
+            if location.startswith("http://"):
+                # Replace http:// with https://
+                fixed_location = location.replace("http://", "https://", 1)
+                response.headers["location"] = fixed_location
+                logger.info(f"Fixed redirect: {location} → {fixed_location}")
+
+        return response
+
+
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """
     Middleware to add OWASP-recommended security headers.
@@ -155,7 +178,10 @@ CORS_ORIGINS = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "http://l
 # Log CORS origins for debugging
 logger.info(f"CORS Origins configured: {CORS_ORIGINS}")
 
-# Add security headers middleware (should be first for all responses)
+# Add HTTPS redirect middleware (MUST be first to fix Railway proxy redirects)
+app.add_middleware(HTTPSRedirectMiddleware)
+
+# Add security headers middleware
 app.add_middleware(SecurityHeadersMiddleware)
 
 app.add_middleware(
