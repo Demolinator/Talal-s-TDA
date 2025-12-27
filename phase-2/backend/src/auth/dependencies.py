@@ -76,6 +76,8 @@ async def get_current_user(
 
     # Validate session token with Better Auth server
     try:
+        print(f"🔍 Validating token with Better Auth server: {AUTH_SERVER_URL}")
+        print(f"🔑 Token: {token[:20]}...")
         async with httpx.AsyncClient() as client:
             # Call Better Auth to validate session
             auth_response = await client.get(
@@ -83,6 +85,7 @@ async def get_current_user(
                 headers={"Cookie": f"better-auth.session_token={token}"},
                 timeout=10.0,
             )
+            print(f"📡 Auth server response status: {auth_response.status_code}")
 
             if auth_response.status_code != 200:
                 raise HTTPException(
