@@ -266,7 +266,12 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint for monitoring"""
-    return {"status": "healthy"}
+    from src.api.auth import AUTH_SERVER_URL
+    return {
+        "status": "healthy",
+        "auth_server_url": AUTH_SERVER_URL,
+        "commit": "27465d5"
+    }
 
 
 if __name__ == "__main__":
