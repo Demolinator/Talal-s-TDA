@@ -150,7 +150,7 @@ async def signup(
                     value=jwt_token,
                     httponly=True,
                     secure=True,  # HTTPS only
-                    samesite="lax",  # Allow cross-site for auth flow
+                    samesite="none",  # CRITICAL: "none" required for cross-domain (frontend on different domain)
                     max_age=15 * 60,  # 15 minutes
                 )
 
@@ -303,7 +303,7 @@ async def login(
                     value=jwt_token,
                     httponly=True,
                     secure=True,  # HTTPS only
-                    samesite="lax",  # Allow cross-site for auth flow
+                    samesite="none",  # CRITICAL: "none" required for cross-domain (frontend on different domain)
                     max_age=15 * 60,  # 15 minutes
                 )
 
@@ -377,7 +377,7 @@ async def logout(
         key="auth_token",
         httponly=True,
         secure=True,
-        samesite="strict",
+        samesite="none",  # Must match the samesite used when setting the cookie
     )
 
     # 204 No Content (response body is None)
