@@ -64,13 +64,17 @@ export async function fetchAPI<T>(
   const token = getAuthToken();
 
   // Build headers with Authorization if token exists
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...options?.headers,
   };
 
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  // Merge with provided headers
+  if (options?.headers) {
+    Object.assign(headers, options.headers);
   }
 
   try {
