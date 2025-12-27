@@ -128,7 +128,7 @@ async def signup(
                     "name": user_data.name,
                     "password": user_data.password,
                 },
-                timeout=10.0,  # 10 second timeout
+                timeout=30.0,  # 30 second timeout (Railway inter-service communication needs extra time)
             )
 
             # If auth server returned error, forward it
@@ -281,7 +281,7 @@ async def login(
                     "email": credentials.email,
                     "password": credentials.password,
                 },
-                timeout=10.0,
+                timeout=30.0,  # 30 second timeout (Railway inter-service communication needs extra time)
             )
 
             # If auth server returned error, forward it
