@@ -19,7 +19,7 @@ router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
 
 @router.get(
-    "/",
+    "",
     response_model=List[TaskResponse],
     status_code=200,
     responses={
@@ -106,7 +106,7 @@ async def list_tasks(
 
 
 @router.post(
-    "/",
+    "",
     response_model=TaskResponse,
     status_code=status.HTTP_201_CREATED,
     responses={
