@@ -2,12 +2,13 @@
  * Better Auth Client Configuration
  *
  * Configures the Better Auth client for frontend authentication
- * with JWT token management and cookie-based session storage.
+ * with JWT token management and cross-domain support.
  *
  * @see frontend/CLAUDE.md for authentication patterns
  */
 
 import { createAuthClient } from "better-auth/react";
+import { setAuthToken as storeToken, clearAuthToken } from "./token-storage";
 
 /**
  * Better Auth client instance
@@ -77,17 +78,28 @@ export async function signUp(data: {
  * @param password - User's password
  */
 export async function signIn(data: { email: string; password: string }) {
-  return authClient.signIn.email({
+  const result = await authClient.signIn.email({
     email: data.email,
     password: data.password,
   });
+
+  // Extract and store JWT token from response
+  if (result.data?.session?.token) {
+    storeToken(result.data.session.token);
+  }
+
+  return result;
 }
 
 /**
  * Sign out the current user
- * Clears auth cookies and redirects to login page
+ * Clears auth tokens and redirects to login page
  */
 export async function signOut() {
+  // Clear stored token
+  clearAuthToken();
+
+  // Also call Better Auth signOut to clear cookies
   return authClient.signOut();
 }
 

@@ -2,13 +2,15 @@
  * API Client for Backend Requests
  *
  * Centralized fetch wrapper with authentication and error handling.
- * Uses HttpOnly cookies for authentication (set by Better Auth server).
+ * Uses JWT tokens in Authorization header for cross-domain authentication.
  *
  * @see frontend/CLAUDE.md for API integration patterns
  *
- * CACHE BUST: v3.0 - HTTPS ENFORCED - NO HTTP ALLOWED
- * Last updated: 2025-12-26 00:30 UTC
+ * CACHE BUST: v4.0 - AUTHORIZATION HEADER - CROSS-DOMAIN FIX
+ * Last updated: 2025-12-27 19:30 UTC
  */
+
+import { getAuthToken } from "./token-storage";
 
 // Use environment variable from Vercel, fallback to production URL
 const API_BASE_URL =
@@ -58,14 +60,24 @@ export async function fetchAPI<T>(
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
 
+  // Get JWT token from storage
+  const token = getAuthToken();
+
+  // Build headers with Authorization if token exists
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    ...options?.headers,
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   try {
     const response = await fetch(url, {
       ...options,
-      credentials: "include", // Include HttpOnly cookies (auth_token)
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-      },
+      credentials: "include", // Still include cookies as fallback
+      headers,
     });
 
     // Handle 401 Unauthorized (session expired)
