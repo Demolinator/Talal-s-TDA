@@ -78,41 +78,39 @@ export async function signUp(data: {
  * @param password - User's password
  */
 export async function signIn(data: { email: string; password: string }) {
-  const result = await authClient.signIn.email({
-    email: data.email,
-    password: data.password,
+  // Use raw fetch instead of Better Auth client to get direct access to response
+  const response = await fetch(`${BACKEND_URL}/api/auth/sign-in/email`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({
+      email: data.email,
+      password: data.password,
+    }),
   });
 
-  // Debug: Log the full response structure
-  console.log("🔐 SIGNIN RESULT:", JSON.stringify(result, null, 2));
-
-  // Extract and store JWT token from response
-  // Better Auth client may return token in different structures
-  let token = null;
-
-  // Try multiple possible response structures
-  if (result.data?.session?.token) {
-    token = result.data.session.token;
-    console.log("✅ Token found at result.data.session.token");
-  } else if ((result as any).session?.token) {
-    token = (result as any).session.token;
-    console.log("✅ Token found at result.session.token");
-  } else if ((result as any).data?.token) {
-    token = (result as any).data.token;
-    console.log("✅ Token found at result.data.token");
-  } else if ((result as any).token) {
-    token = (result as any).token;
-    console.log("✅ Token found at result.token");
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: "Login failed" }));
+    return { error: { message: error.message || error.error || "Invalid email or password" } };
   }
 
-  if (token) {
+  const responseData = await response.json();
+  console.log("🔐 SIGNIN RESPONSE:", JSON.stringify(responseData, null, 2));
+
+  // Extract token from response
+  // Backend returns: { user: {...}, session: { token: "...", expiresAt: "..." } }
+  if (responseData.session?.token) {
+    const token = responseData.session.token;
+    console.log("✅ Token found:", token.substring(0, 20) + "...");
     storeToken(token);
     console.log("✅ Token stored successfully");
   } else {
-    console.error("❌ No token found in response!");
+    console.error("❌ No token in response! Structure:", Object.keys(responseData));
   }
 
-  return result;
+  return { data: responseData, error: null };
 }
 
 /**
