@@ -100,9 +100,9 @@ export async function signIn(data: { email: string; password: string }) {
   console.log("🔐 SIGNIN RESPONSE:", JSON.stringify(responseData, null, 2));
 
   // Extract token from response
-  // Backend returns: { user: {...}, session: { token: "...", expiresAt: "..." } }
-  if (responseData.session?.token) {
-    const token = responseData.session.token;
+  // Better Auth returns: { token: "...", user: {...}, redirect: false }
+  if (responseData.token) {
+    const token = responseData.token;
     console.log("✅ Token found:", token.substring(0, 20) + "...");
     storeToken(token);
     console.log("✅ Token stored successfully");
