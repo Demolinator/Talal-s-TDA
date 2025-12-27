@@ -74,10 +74,11 @@ class Task(TaskBase, table=True):
         index=True,  # Index for filtering by completion status
         description="Task completion status",
     )
-    user_id: uuid.UUID = Field(
+    # Better Auth uses string IDs (not UUIDs)
+    user_id: str = Field(
         foreign_key="user.id",
         index=True,  # Index for fast user task queries
-        description="Owner user ID (foreign key to user table)",
+        description="Owner user ID (foreign key to user table - Better Auth string ID)",
     )
     created_at: datetime = Field(
         default_factory=datetime.utcnow,

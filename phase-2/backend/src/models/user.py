@@ -55,10 +55,10 @@ class User(UserBase, table=True):
 
     __tablename__ = "user"  # Better Auth uses singular 'user'
 
-    id: uuid.UUID = Field(
-        default_factory=uuid.uuid4,
+    # Better Auth uses string IDs (not UUIDs)
+    id: str = Field(
         primary_key=True,
-        description="Unique user identifier (UUID v4)",
+        description="Unique user identifier (Better Auth managed)",
     )
 
     # Better Auth fields (camelCase to match Better Auth schema)

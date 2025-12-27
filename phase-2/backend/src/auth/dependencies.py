@@ -5,29 +5,32 @@ Provides dependency injection for extracting and validating authenticated users.
 """
 
 import os
+from datetime import datetime
 from uuid import UUID
 
 import httpx
 from fastapi import Depends, HTTPException, Request
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from src.auth.jwt import verify_token
 from src.db.session import get_session
 from src.models.user import User
+from src.models.session import BetterAuthSession
 
-# Auth server URL for session validation
+# Auth server URL (kept for reference, but no longer used for session validation)
 AUTH_SERVER_URL = os.getenv("AUTH_SERVER_URL", "http://localhost:3001")
 
 
 async def get_current_user(
     request: Request,
-    session: Session = Depends(get_session),
+    db_session: Session = Depends(get_session),
 ) -> User:
     """
     FastAPI dependency to extract authenticated user from Better Auth session token.
 
-    Validates session token by calling Better Auth server and fetches
-    the corresponding user from the shared database.
+    Validates session token by querying the Better Auth session table in the
+    shared database. This is faster and more reliable than calling the auth
+    server over HTTP, especially in cross-domain deployments.
 
     Token Sources (checked in order):
     1. Authorization header: "Bearer <token>"
@@ -35,13 +38,13 @@ async def get_current_user(
 
     Args:
         request: FastAPI Request object (contains headers and cookies)
-        session: Database session (injected via dependency)
+        db_session: Database session (injected via dependency)
 
     Returns:
         User object for the authenticated user
 
     Raises:
-        HTTPException 401: If token is missing, invalid, or user not found
+        HTTPException 401: If token is missing, invalid, expired, or user not found
 
     Usage:
         @router.get("/api/tasks")
@@ -51,12 +54,17 @@ async def get_current_user(
             return tasks
 
     Example Flow:
-        1. User logs in via Better Auth (returns session token)
+        1. User logs in via Better Auth (returns session token in JSON)
         2. Frontend stores token and sends in Authorization header
         3. Dependency extracts token from header (or cookie fallback)
-        4. Token is validated by calling Better Auth /api/auth/get-session
+        4. Token is validated by querying Better Auth's `session` table
         5. User is fetched from database by userId from session
         6. User object is returned to route handler
+
+    Architecture Note:
+        This approach avoids the cross-domain cookie issues and HTTP overhead
+        of calling the auth server. Both services share the same Neon database,
+        so querying the session table directly is safe and efficient.
     """
     # Try Authorization header first (for cross-domain requests)
     token = None
@@ -74,57 +82,28 @@ async def get_current_user(
             detail="Not authenticated - missing auth token",
         )
 
-    # Validate session token with Better Auth server
-    try:
-        print(f"🔍 Validating token with Better Auth server: {AUTH_SERVER_URL}")
-        print(f"🔑 Token: {token[:20]}...")
-        async with httpx.AsyncClient() as client:
-            # Call Better Auth to validate session
-            auth_response = await client.get(
-                f"{AUTH_SERVER_URL}/api/auth/get-session",
-                headers={"Cookie": f"better-auth.session_token={token}"},
-                timeout=10.0,
-            )
-            print(f"📡 Auth server response status: {auth_response.status_code}")
+    # Query Better Auth session table directly
+    # The token from the login response JSON matches the session.token column (not id!)
+    query = select(BetterAuthSession).where(BetterAuthSession.token == token)
+    session_record = db_session.exec(query).first()
 
-            if auth_response.status_code != 200:
-                raise HTTPException(
-                    status_code=401,
-                    detail="Invalid or expired session token",
-                )
-
-            session_data = auth_response.json()
-
-            # Extract user ID from session
-            if not session_data or "user" not in session_data:
-                raise HTTPException(
-                    status_code=401,
-                    detail="Invalid session - no user data",
-                )
-
-            user_id_str = session_data["user"].get("id")
-            if not user_id_str:
-                raise HTTPException(
-                    status_code=401,
-                    detail="Invalid session - missing user ID",
-                )
-
-            user_id = UUID(user_id_str)
-
-    except httpx.RequestError as e:
-        raise HTTPException(
-            status_code=503,
-            detail=f"Auth server unavailable: {str(e)}",
-        )
-    except ValueError:
-        # Invalid UUID format
+    if not session_record:
         raise HTTPException(
             status_code=401,
-            detail="Invalid session - malformed user ID",
+            detail="Invalid session token - session not found",
         )
 
-    # Fetch user from database
-    user = session.get(User, user_id)
+    # Check if session has expired
+    if session_record.expiresAt < datetime.utcnow():
+        raise HTTPException(
+            status_code=401,
+            detail="Session expired - please log in again",
+        )
+
+    # Fetch user from database using userId from session
+    # Better Auth uses string IDs, not UUIDs
+    user_query = select(User).where(User.id == session_record.userId)
+    user = db_session.exec(user_query).first()
 
     if not user:
         raise HTTPException(

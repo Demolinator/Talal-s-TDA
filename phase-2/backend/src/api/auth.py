@@ -141,20 +141,9 @@ async def signup(
             # Extract response data from Better Auth
             auth_data = auth_response.json()
 
-            # Better Auth returns JWT token in session.token
-            # Set it as "auth_token" cookie for backend consistency
-            if "session" in auth_data and "token" in auth_data["session"]:
-                jwt_token = auth_data["session"]["token"]
-                response.set_cookie(
-                    key="auth_token",
-                    value=jwt_token,
-                    httponly=True,
-                    secure=True,  # HTTPS only
-                    samesite="none",  # CRITICAL: "none" required for cross-domain (frontend on different domain)
-                    max_age=15 * 60,  # 15 minutes
-                )
-
-            # Return successful response from Better Auth
+            # The token in the JSON response is correct!
+            # It matches the session.token column in the database.
+            # No modification needed - just return the response as-is.
             return auth_data
 
     except httpx.TimeoutException:
@@ -294,20 +283,9 @@ async def login(
             # Extract response data from Better Auth
             auth_data = auth_response.json()
 
-            # Better Auth returns JWT token in session.token
-            # Set it as "auth_token" cookie for backend consistency
-            if "session" in auth_data and "token" in auth_data["session"]:
-                jwt_token = auth_data["session"]["token"]
-                response.set_cookie(
-                    key="auth_token",
-                    value=jwt_token,
-                    httponly=True,
-                    secure=True,  # HTTPS only
-                    samesite="none",  # CRITICAL: "none" required for cross-domain (frontend on different domain)
-                    max_age=15 * 60,  # 15 minutes
-                )
-
-            # Return successful response from Better Auth
+            # The token in the JSON response is correct!
+            # It matches the session.token column in the database.
+            # No modification needed - just return the response as-is.
             return auth_data
 
     except httpx.TimeoutException:
