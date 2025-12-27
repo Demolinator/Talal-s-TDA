@@ -34,11 +34,15 @@ const app = express();
  */
 
 // CORS Configuration
-// Allow frontend to make authenticated cross-origin requests
+// Allow frontend AND backend to make authenticated cross-origin requests
 const CORS_ORIGINS = process.env.CORS_ORIGINS?.split(",") || [
   "http://localhost:3000",
   "http://127.0.0.1:3000",
+  "https://frontend-peach-xi-69.vercel.app",
+  "https://tda-backend-production.up.railway.app",
 ];
+
+console.log("🌐 CORS Origins:", CORS_ORIGINS);
 
 app.use(
   cors({

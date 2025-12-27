@@ -24,6 +24,23 @@ for (const envVar of REQUIRED_ENV_VARS) {
 }
 
 /**
+ * PostgreSQL Connection Pool
+ * Optimized for Railway deployment with proper timeouts and SSL
+ */
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL!,
+  max: 20, // Maximum pool size
+  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
+  connectionTimeoutMillis: 10000, // 10 second connection timeout
+  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+});
+
+// Test pool connection on startup
+pool.on("error", (err) => {
+  console.error("❌ Unexpected database pool error:", err);
+});
+
+/**
  * Better Auth Instance
  *
  * Configured with PostgreSQL using Kysely
@@ -44,11 +61,9 @@ export const auth = betterAuth({
 
   /**
    * Database Configuration
-   * Using Pool instance - Better Auth requires this for PostgreSQL
+   * Using optimized Pool instance with connection pooling
    */
-  database: new Pool({
-    connectionString: process.env.DATABASE_URL!,
-  }),
+  database: pool,
 
   /**
    * Email and Password Authentication
@@ -75,6 +90,7 @@ export const auth = betterAuth({
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://frontend-peach-xi-69.vercel.app",
+    "https://tda-backend-production.up.railway.app", // Backend needs to proxy requests
   ],
 
   /**
