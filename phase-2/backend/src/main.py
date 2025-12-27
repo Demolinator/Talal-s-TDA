@@ -175,6 +175,7 @@ All endpoints are prefixed with `/api/`.
             "description": "Health check and monitoring endpoints",
         },
     ],
+    redirect_slashes=False,  # Disable automatic trailing slash redirects (breaks CORS)
 )
 
 # CORS Configuration from environment variables
