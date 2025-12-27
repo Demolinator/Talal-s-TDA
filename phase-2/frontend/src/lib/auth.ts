@@ -83,9 +83,33 @@ export async function signIn(data: { email: string; password: string }) {
     password: data.password,
   });
 
+  // Debug: Log the full response structure
+  console.log("🔐 SIGNIN RESULT:", JSON.stringify(result, null, 2));
+
   // Extract and store JWT token from response
+  // Better Auth client may return token in different structures
+  let token = null;
+
+  // Try multiple possible response structures
   if (result.data?.session?.token) {
-    storeToken(result.data.session.token);
+    token = result.data.session.token;
+    console.log("✅ Token found at result.data.session.token");
+  } else if ((result as any).session?.token) {
+    token = (result as any).session.token;
+    console.log("✅ Token found at result.session.token");
+  } else if ((result as any).data?.token) {
+    token = (result as any).data.token;
+    console.log("✅ Token found at result.data.token");
+  } else if ((result as any).token) {
+    token = (result as any).token;
+    console.log("✅ Token found at result.token");
+  }
+
+  if (token) {
+    storeToken(token);
+    console.log("✅ Token stored successfully");
+  } else {
+    console.error("❌ No token found in response!");
   }
 
   return result;
