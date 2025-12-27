@@ -27,8 +27,12 @@ async def get_current_user(
     NOTE: This dependency validates tokens created by the Better Auth server.
     The JWT secret (JWT_SECRET) MUST match Better Auth's secret (BETTER_AUTH_SECRET).
 
+    Token Sources (checked in order):
+    1. Authorization header: "Bearer <token>"
+    2. Cookie: "auth_token"
+
     Args:
-        request: FastAPI Request object (contains cookies)
+        request: FastAPI Request object (contains headers and cookies)
         session: Database session (injected via dependency)
 
     Returns:
@@ -46,15 +50,22 @@ async def get_current_user(
 
     Example Flow:
         1. User logs in via Better Auth server (http://localhost:3001/auth/sign-in)
-        2. Better Auth sets "auth_token" cookie with JWT
-        3. Client sends request to FastAPI with cookie
-        4. Dependency extracts token from cookie
+        2. Better Auth returns JWT token in response body
+        3. Frontend stores token and sends in Authorization header
+        4. Dependency extracts token from header (or cookie fallback)
         5. Token is validated with shared secret
         6. User is fetched from database by userId claim
         7. User object is returned to route handler
     """
-    # Extract token from HttpOnly cookie
-    token = request.cookies.get("auth_token")
+    # Try Authorization header first (for cross-domain requests)
+    token = None
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header[7:]  # Remove "Bearer " prefix
+
+    # Fallback to cookie (for same-domain requests)
+    if not token:
+        token = request.cookies.get("auth_token")
 
     if not token:
         raise HTTPException(
