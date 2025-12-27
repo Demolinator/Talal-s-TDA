@@ -31,7 +31,7 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL!,
   max: 20, // Maximum pool size
   idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 10000, // 10 second connection timeout
+  connectionTimeoutMillis: 30000, // 30 second connection timeout (Railway inter-service needs extra time)
   ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
 });
 
