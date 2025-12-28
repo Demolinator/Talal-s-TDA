@@ -430,6 +430,130 @@ async def update_task(
 
 
 @router.patch(
+    "/{task_id}",
+    response_model=TaskResponse,
+    status_code=200,
+    responses={
+        200: {
+            "description": "Task updated successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "id": "650e8400-e29b-41d4-a716-446655440001",
+                        "title": "Complete project documentation (updated)",
+                        "description": "Write README, API docs, and deployment guide",
+                        "is_complete": True,
+                        "user_id": "550e8400-e29b-41d4-a716-446655440000",
+                        "created_at": "2025-12-07T16:00:00Z",
+                        "updated_at": "2025-12-07T16:30:00Z",
+                    }
+                }
+            },
+        },
+        400: {
+            "description": "Validation error",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Title cannot be empty or only whitespace"}
+                }
+            },
+        },
+        401: {
+            "description": "Not authenticated",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Not authenticated"}
+                }
+            },
+        },
+        403: {
+            "description": "Forbidden - task belongs to different user",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Not authorized to access this task"}
+                }
+            },
+        },
+        404: {
+            "description": "Task not found",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Task not found"}
+                }
+            },
+        },
+    },
+)
+async def patch_task(
+    task_id: str,
+    task_data: TaskUpdate,
+    current_user: User = Depends(get_current_user),
+    task_service: TaskService = Depends(),
+):
+    """
+    Partially update task fields (PATCH method).
+
+    Performs partial update of task properties including completion status.
+    Only fields provided in the request body are updated. The updated_at
+    timestamp is automatically set to the current UTC time.
+
+    This endpoint accepts the same updates as PUT but follows REST semantics
+    for partial updates. Supports updating title, description, and is_complete.
+
+    **Path Parameters:**
+    - task_id: UUID of the task to update
+
+    **Request Body (all fields optional):**
+    - title: New task title (1-200 characters if provided)
+    - description: New task description (max 2000 characters if provided)
+    - is_complete: Mark task complete (true) or incomplete (false)
+
+    **Response:**
+    - 200: Task updated successfully
+    - 400: Validation error (empty title, title too long, etc.)
+    - 401: Not authenticated (missing or invalid auth token)
+    - 403: Forbidden (task belongs to different user)
+    - 404: Task not found
+
+    **Authentication:**
+    - Requires valid JWT token in "auth_token" cookie or Authorization header
+
+    **Authorization:**
+    - User must own the task (task.user_id must match current_user.id)
+
+    **Side Effects:**
+    - updated_at timestamp is set to current UTC time
+    - Title and description are trimmed of leading/trailing whitespace
+
+    **Example:**
+    ```json
+    PATCH /api/tasks/650e8400-e29b-41d4-a716-446655440001
+    Authorization: Bearer eyJhbGc...
+    {
+        "title": "Complete project documentation (updated)",
+        "is_complete": true
+    }
+
+    Response 200:
+    {
+        "id": "650e8400-e29b-41d4-a716-446655440001",
+        "title": "Complete project documentation (updated)",
+        "description": "Write README, API docs, and deployment guide",
+        "is_complete": true,
+        "user_id": "550e8400-e29b-41d4-a716-446655440000",
+        "created_at": "2025-12-07T16:00:00Z",
+        "updated_at": "2025-12-07T16:30:00Z"
+    }
+    ```
+    """
+    try:
+        task = await task_service.update_task(task_id, task_data, current_user.id)
+        return task
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.patch(
     "/{task_id}/complete",
     response_model=TaskResponse,
     status_code=200,
