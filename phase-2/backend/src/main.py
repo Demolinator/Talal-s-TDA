@@ -271,7 +271,7 @@ async def health_check():
     return {
         "status": "healthy",
         "auth_server_url": AUTH_SERVER_URL,
-        "commit": "ece24f2"  # Latest: Add PATCH endpoint for task updates
+        "commit": "05f5bd1"  # Latest: Add is_complete to TaskUpdate model
     }
 
 
