@@ -9,6 +9,7 @@
  */
 
 import { betterAuth } from "better-auth";
+import { Pool } from "pg";
 import dotenv from "dotenv";
 
 // Load environment variables
@@ -44,12 +45,13 @@ export const auth = betterAuth({
 
   /**
    * Database Configuration
-   * Pass connection string directly - Better Auth handles Kysely internally
+   * Pass Pool instance directly - Better Auth wraps it with Kysely internally
+   * @see https://www.better-auth.com/docs/adapters/postgresql
    */
-  database: {
-    provider: "pg",
-    url: process.env.DATABASE_URL!,
-  },
+  database: new Pool({
+    connectionString: process.env.DATABASE_URL!,
+    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+  }),
 
   /**
    * Email and Password Authentication
