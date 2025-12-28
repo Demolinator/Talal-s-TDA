@@ -10,6 +10,7 @@
 
 import { betterAuth } from "better-auth";
 import { Pool } from "pg";
+import { Kysely, PostgresDialect } from "kysely";
 import dotenv from "dotenv";
 
 // Load environment variables
@@ -41,6 +42,14 @@ pool.on("error", (err) => {
 });
 
 /**
+ * Kysely Database Instance
+ * Better Auth requires Kysely for PostgreSQL
+ */
+const db = new Kysely({
+  dialect: new PostgresDialect({ pool }),
+});
+
+/**
  * Better Auth Instance
  *
  * Configured with PostgreSQL using Kysely
@@ -61,9 +70,9 @@ export const auth = betterAuth({
 
   /**
    * Database Configuration
-   * Using optimized Pool instance with connection pooling
+   * Better Auth requires Kysely instance, not raw Pool
    */
-  database: pool,
+  database: db,
 
   /**
    * Email and Password Authentication
