@@ -132,6 +132,10 @@ class TaskUpdate(SQLModel):
         max_length=2000,
         description="Updated task description",
     )
+    is_complete: Optional[bool] = Field(
+        None,
+        description="Updated completion status",
+    )
 
     @field_validator("title", mode="before")
     @classmethod
@@ -166,6 +170,7 @@ class TaskUpdate(SQLModel):
             "example": {
                 "title": "Complete project documentation (updated)",
                 "description": "Write README, API docs, and deployment guide",
+                "is_complete": True,
             }
         }
 
