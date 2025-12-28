@@ -53,10 +53,11 @@ export default function DashboardPage() {
     try {
       setIsLoading(true);
       const response = await getTasks();
-      setTasks(response.tasks);
+      setTasks(response?.tasks || []);  // Handle undefined response safely
     } catch (error) {
       toast.error("Failed to load tasks");
       console.error("Load tasks error:", error);
+      setTasks([]);  // Set empty array on error to prevent crash
     } finally {
       setIsLoading(false);
     }
