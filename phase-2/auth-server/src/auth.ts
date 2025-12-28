@@ -26,13 +26,18 @@ for (const envVar of REQUIRED_ENV_VARS) {
 
 /**
  * PostgreSQL Connection Pool
- * Optimized for Railway deployment with proper timeouts and SSL
+ * MEMORY-OPTIMIZED for Railway free tier (1GB limit)
+ *
+ * Reduced pool size to minimize memory footprint:
+ * - Railway free tier: 1GB memory limit
+ * - Auth-server was hitting OOM with max:10 connections
+ * - Solution: Reduce to max:2 connections (minimal for Better Auth)
  */
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL!,
-  max: 20, // Maximum pool size
-  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 30000, // 30 second connection timeout (Railway inter-service needs extra time)
+  max: 2, // REDUCED to 2 to stay under 1GB memory limit
+  idleTimeoutMillis: 10000, // Reduced to 10s to free memory faster
+  connectionTimeoutMillis: 30000, // 30s timeout (sufficient for Neon)
   ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
 });
 
@@ -104,9 +109,10 @@ export const auth = betterAuth({
 
   /**
    * Rate Limiting
+   * TEMPORARILY DISABLED for testing (was causing login timeouts)
    */
   rateLimit: {
-    enabled: true,
+    enabled: false, // Disabled to eliminate rate limiting as timeout cause
     window: 60,
     max: 10,
   },
