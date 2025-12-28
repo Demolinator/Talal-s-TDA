@@ -82,11 +82,7 @@ class User(UserBase, table=True):
         description="Last update timestamp (UTC)",
     )
 
-    # Email/password auth field (optional, used by Better Auth)
-    hashed_password: Optional[str] = Field(
-        default=None,
-        description="Bcrypt hashed password (managed by Better Auth)",
-    )
+    # NOTE: Better Auth manages passwords separately - no hashed_password column in user table
 
     class Config:
         """SQLModel configuration"""
@@ -154,7 +150,7 @@ class UserResponse(UserBase):
     Compatible with Better Auth response format.
     """
 
-    id: uuid.UUID
+    id: str  # UUID v4 as string (matches Better Auth)
     emailVerified: bool
     createdAt: datetime
     updatedAt: datetime
