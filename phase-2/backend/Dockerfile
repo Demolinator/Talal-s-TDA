@@ -1,5 +1,6 @@
 FROM python:3.12-slim
 
+# Force Railway redeploy - 2025-12-28
 # Set working directory
 WORKDIR /app
 
