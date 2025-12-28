@@ -190,9 +190,9 @@ class TaskResponse(TaskBase):
     Includes all task fields for client display.
     """
 
-    id: uuid.UUID
+    id: str  # UUID v4 as string (matches Better Auth)
     is_complete: bool
-    user_id: uuid.UUID
+    user_id: str  # UUID v4 as string (matches Better Auth)
     created_at: datetime
     updated_at: datetime
 
