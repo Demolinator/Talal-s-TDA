@@ -271,7 +271,7 @@ async def health_check():
     return {
         "status": "healthy",
         "auth_server_url": AUTH_SERVER_URL,
-        "commit": "a4accf3"  # Latest: Fix auth-server Pool configuration + User model fix
+        "commit": "ece24f2"  # Latest: Add PATCH endpoint for task updates
     }
 
 
