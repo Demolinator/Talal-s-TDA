@@ -6,7 +6,6 @@ All business logic delegated to TaskService.
 """
 
 from typing import List, Optional
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
@@ -264,7 +263,7 @@ async def create_task(
     },
 )
 async def get_task(
-    task_id: UUID,
+    task_id: str,
     current_user: User = Depends(get_current_user),
     task_service: TaskService = Depends(),
 ):
@@ -366,7 +365,7 @@ async def get_task(
     },
 )
 async def update_task(
-    task_id: UUID,
+    task_id: str,
     task_data: TaskUpdate,
     current_user: User = Depends(get_current_user),
     task_service: TaskService = Depends(),
@@ -478,7 +477,7 @@ async def update_task(
     },
 )
 async def toggle_task_complete(
-    task_id: UUID,
+    task_id: str,
     toggle_data: TaskToggleComplete,
     current_user: User = Depends(get_current_user),
     task_service: TaskService = Depends(),
@@ -571,7 +570,7 @@ async def toggle_task_complete(
     },
 )
 async def delete_task(
-    task_id: UUID,
+    task_id: str,
     current_user: User = Depends(get_current_user),
     task_service: TaskService = Depends(),
 ):

@@ -34,7 +34,7 @@ class TaskService:
         self.session = session
 
     async def create_task(
-        self, task_data: TaskCreate, user_id: uuid.UUID
+        self, task_data: TaskCreate, user_id: str
     ) -> Task:
         """
         Create new task for user.
@@ -68,7 +68,7 @@ class TaskService:
 
         # Create task
         task = Task(
-            id=uuid.uuid4(),
+            id=str(uuid.uuid4()),
             title=task_data.title.strip(),
             description=task_data.description.strip() if task_data.description else None,
             is_complete=False,
@@ -86,7 +86,7 @@ class TaskService:
 
     async def get_user_tasks(
         self,
-        user_id: uuid.UUID,
+        user_id: str,
         is_complete: Optional[bool] = None,
         limit: int = 50,
         offset: int = 0,
@@ -119,7 +119,7 @@ class TaskService:
         tasks = self.session.exec(query).all()
         return list(tasks)
 
-    async def get_task(self, task_id: uuid.UUID, user_id: uuid.UUID) -> Task:
+    async def get_task(self, task_id: str, user_id: str) -> Task:
         """
         Get single task with ownership verification.
 
@@ -152,7 +152,7 @@ class TaskService:
         return task
 
     async def update_task(
-        self, task_id: uuid.UUID, task_data: TaskUpdate, user_id: uuid.UUID
+        self, task_id: str, task_data: TaskUpdate, user_id: str
     ) -> Task:
         """
         Update task fields.
@@ -199,7 +199,7 @@ class TaskService:
         return task
 
     async def toggle_complete(
-        self, task_id: uuid.UUID, is_complete: bool, user_id: uuid.UUID
+        self, task_id: str, is_complete: bool, user_id: str
     ) -> Task:
         """
         Toggle task completion status.
@@ -233,7 +233,7 @@ class TaskService:
 
         return task
 
-    async def delete_task(self, task_id: uuid.UUID, user_id: uuid.UUID) -> None:
+    async def delete_task(self, task_id: str, user_id: str) -> None:
         """
         Delete task.
 
