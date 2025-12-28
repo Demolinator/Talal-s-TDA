@@ -271,7 +271,7 @@ async def health_check():
     return {
         "status": "healthy",
         "auth_server_url": AUTH_SERVER_URL,
-        "commit": "27465d5"
+        "commit": "74ba9e8"  # Latest: Fix User model schema (removed hashed_password)
     }
 
 
