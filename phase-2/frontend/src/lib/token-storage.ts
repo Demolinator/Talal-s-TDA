@@ -1,22 +1,22 @@
 /**
  * JWT Token Storage Utility
  *
- * Provides secure token storage for cross-domain authentication.
- * Uses memory storage (session-based) for maximum security.
+ * Provides persistent token storage for cross-domain authentication.
+ * Uses localStorage for persistence across browser sessions.
  */
 
 let authToken: string | null = null;
 
 /**
- * Store JWT token in memory
+ * Store JWT token in localStorage
  * @param token - JWT token from login response
  */
 export function setAuthToken(token: string): void {
   authToken = token;
 
-  // Also store in sessionStorage as backup (cleared when tab closes)
+  // Store in localStorage for persistence across sessions
   if (typeof window !== "undefined") {
-    sessionStorage.setItem("auth_token", token);
+    localStorage.setItem("auth_token", token);
   }
 }
 
@@ -30,9 +30,9 @@ export function getAuthToken(): string | null {
     return authToken;
   }
 
-  // Fallback to sessionStorage
+  // Fallback to localStorage
   if (typeof window !== "undefined") {
-    const token = sessionStorage.getItem("auth_token");
+    const token = localStorage.getItem("auth_token");
     if (token) {
       authToken = token; // Restore to memory
       return token;
@@ -49,7 +49,7 @@ export function clearAuthToken(): void {
   authToken = null;
 
   if (typeof window !== "undefined") {
-    sessionStorage.removeItem("auth_token");
+    localStorage.removeItem("auth_token");
   }
 }
 
