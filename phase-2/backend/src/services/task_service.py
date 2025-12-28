@@ -188,6 +188,9 @@ class TaskService:
         if task_data.description is not None:
             task.description = task_data.description.strip() if task_data.description else None
 
+        if task_data.is_complete is not None:
+            task.is_complete = task_data.is_complete
+
         # Update timestamp
         task.updated_at = datetime.utcnow()
 

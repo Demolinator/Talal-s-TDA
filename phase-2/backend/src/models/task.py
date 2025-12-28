@@ -64,10 +64,11 @@ class Task(TaskBase, table=True):
 
     __tablename__ = "tasks"
 
-    id: uuid.UUID = Field(
-        default_factory=uuid.uuid4,
+    # Better Auth uses string IDs (not UUIDs)
+    id: str = Field(
+        default_factory=lambda: str(uuid.uuid4()),
         primary_key=True,
-        description="Unique task identifier (UUID v4)",
+        description="Unique task identifier (UUID v4 as string)",
     )
     is_complete: bool = Field(
         default=False,
