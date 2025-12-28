@@ -9,8 +9,6 @@
  */
 
 import { betterAuth } from "better-auth";
-import { Pool } from "pg";
-import { Kysely, PostgresDialect } from "kysely";
 import dotenv from "dotenv";
 
 // Load environment variables
@@ -25,39 +23,10 @@ for (const envVar of REQUIRED_ENV_VARS) {
 }
 
 /**
- * PostgreSQL Connection Pool
- * MEMORY-OPTIMIZED for Railway free tier (1GB limit)
- *
- * Reduced pool size to minimize memory footprint:
- * - Railway free tier: 1GB memory limit
- * - Auth-server was hitting OOM with max:10 connections
- * - Solution: Reduce to max:2 connections (minimal for Better Auth)
- */
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL!,
-  max: 2, // REDUCED to 2 to stay under 1GB memory limit
-  idleTimeoutMillis: 10000, // Reduced to 10s to free memory faster
-  connectionTimeoutMillis: 30000, // 30s timeout (sufficient for Neon)
-  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
-});
-
-// Test pool connection on startup
-pool.on("error", (err) => {
-  console.error("❌ Unexpected database pool error:", err);
-});
-
-/**
- * Kysely Database Instance
- * Better Auth requires Kysely for PostgreSQL
- */
-const db = new Kysely({
-  dialect: new PostgresDialect({ pool }),
-});
-
-/**
  * Better Auth Instance
  *
- * Configured with PostgreSQL using Kysely
+ * Configured with PostgreSQL using connection string
+ * Better Auth will handle Kysely setup internally
  */
 export const auth = betterAuth({
   /**
@@ -75,9 +44,12 @@ export const auth = betterAuth({
 
   /**
    * Database Configuration
-   * Better Auth requires Kysely instance, not raw Pool
+   * Pass connection string directly - Better Auth handles Kysely internally
    */
-  database: db,
+  database: {
+    provider: "pg",
+    url: process.env.DATABASE_URL!,
+  },
 
   /**
    * Email and Password Authentication
