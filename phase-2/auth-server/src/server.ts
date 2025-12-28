@@ -71,7 +71,7 @@ app.get("/health", (req: Request, res: Response) => {
     status: "healthy",
     timestamp: new Date().toISOString(),
     service: "better-auth-server",
-    version: "1.0.0",
+    version: "1.0.1",  // Updated after Kysely fix
   });
 });
 
@@ -81,7 +81,7 @@ app.get("/api/auth/health", (req: Request, res: Response) => {
     status: "healthy",
     timestamp: new Date().toISOString(),
     service: "better-auth-server",
-    version: "1.0.0",
+    version: "1.0.1",  // Updated after Kysely fix
   });
 });
 
