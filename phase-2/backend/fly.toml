@@ -1,0 +1,88 @@
+# Fly.io Configuration for FastAPI Backend
+# Phase III Todo App - AI Chat Interface
+
+app = "todo-app-backend-phase3"
+primary_region = "iad" # Virginia (closest to Neon PostgreSQL)
+
+[build]
+  # Use existing Dockerfile
+  dockerfile = "Dockerfile"
+
+[env]
+  # Non-sensitive environment variables
+  PYTHON_VERSION = "3.13.0"
+  JWT_ALGORITHM = "HS256"
+  ACCESS_TOKEN_EXPIRE_MINUTES = "15"
+  REFRESH_TOKEN_EXPIRE_DAYS = "7"
+  ENVIRONMENT = "production"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"  # Free tier: stop after 5 minutes of inactivity
+  auto_start_machines = true
+  min_machines_running = 0     # Free tier: scale to zero when idle
+
+  # Health checks
+  [http_service.checks]
+    [http_service.checks.health]
+      interval = "30s"
+      timeout = "5s"
+      grace_period = "10s"
+      method = "GET"
+      path = "/health"
+      protocol = "http"
+      tls_skip_verify = false
+
+      [http_service.checks.health.headers]
+        User-Agent = "Fly-Health-Check"
+
+[[services]]
+  internal_port = 8000
+  protocol = "tcp"
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 25
+    soft_limit = 20
+
+  [[services.tcp_checks]]
+    interval = "15s"
+    timeout = "2s"
+    grace_period = "10s"
+
+  [[services.http_checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/health"
+    protocol = "http"
+    tls_skip_verify = false
+
+    [services.http_checks.headers]
+      User-Agent = "Fly-Health-Check"
+
+[[vm]]
+  size = "shared-cpu-1x"  # Free tier: 256 MB RAM, shared CPU
+  memory = "256mb"
+  cpus = 1
+
+# Secrets (set via flyctl secrets set)
+# Required secrets to set:
+# - DATABASE_URL
+# - OPENAI_API_KEY
+# - JWT_SECRET
+# - CORS_ORIGINS
