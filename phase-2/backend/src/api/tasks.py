@@ -5,11 +5,13 @@ Thin controllers for task CRUD operations.
 All business logic delegated to TaskService.
 """
 
+from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from src.auth.dependencies import get_current_user
+from src.models.priority import Priority
 from src.models.task import Task, TaskCreate, TaskResponse, TaskToggleComplete, TaskUpdate
 from src.models.user import User
 from src.services.task_service import TaskService
@@ -24,80 +26,82 @@ router = APIRouter(prefix="/api/tasks", tags=["tasks"])
     responses={
         200: {
             "description": "List of tasks",
-            "content": {
-                "application/json": {
-                    "example": [
-                        {
-                            "id": "650e8400-e29b-41d4-a716-446655440001",
-                            "title": "Complete project documentation",
-                            "description": "Write comprehensive README and API docs",
-                            "is_complete": False,
-                            "user_id": "550e8400-e29b-41d4-a716-446655440000",
-                            "created_at": "2025-12-07T16:00:00Z",
-                            "updated_at": "2025-12-07T16:00:00Z",
-                        }
-                    ]
-                }
-            },
         },
         401: {
             "description": "Not authenticated",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Not authenticated"}
-                }
-            },
         },
     },
 )
 async def list_tasks(
     is_complete: Optional[bool] = Query(None, description="Filter by completion status"),
+    priority: Optional[int] = Query(None, ge=Priority.LOW, le=Priority.HIGH, description="Filter by priority (1=low, 2=medium, 3=high)"),
+    tags: Optional[str] = Query(None, description="Filter by tag IDs (comma-separated)"),
+    search: Optional[str] = Query(None, description="Search in title and description"),
+    due_date_before: Optional[datetime] = Query(None, description="Filter by due date before (ISO 8601)"),
+    due_date_after: Optional[datetime] = Query(None, description="Filter by due date after (ISO 8601)"),
+    sort_by: str = Query("created_at", description="Sort field (created_at, due_date, priority, title, updated_at)"),
+    sort_order: str = Query("desc", regex="^(asc|desc)$", description="Sort order (asc or desc)"),
     limit: int = Query(50, ge=1, le=100, description="Maximum tasks to return"),
     offset: int = Query(0, ge=0, description="Number of tasks to skip"),
     current_user: User = Depends(get_current_user),
     task_service: TaskService = Depends(),
 ):
     """
-    Get all tasks for authenticated user.
+    Get all tasks for authenticated user with advanced filtering and sorting.
 
     Retrieves paginated list of tasks owned by the current authenticated user.
-    Tasks are sorted by creation date (newest first). Supports filtering by
-    completion status.
+    Supports filtering by completion status, priority, tags, search, and due date.
+    Supports sorting by multiple fields.
 
     **Query Parameters:**
-    - is_complete: Optional boolean to filter by completion status (null = all tasks)
-    - limit: Maximum number of tasks to return (1-100, default: 50)
+    - is_complete: Optional boolean to filter by completion status
+    - priority: Optional priority filter (1=low, 2=medium, 3=high)
+    - tags: Comma-separated list of tag IDs to filter (tasks must have ALL tags)
+    - search: Search query for title and description (case-insensitive partial match)
+    - due_date_before: Filter by due date before this ISO 8601 datetime
+    - due_date_after: Filter by due date after this ISO 8601 datetime
+    - sort_by: Field to sort by (default: created_at)
+    - sort_order: Sort direction (asc or desc, default: desc)
+    - limit: Maximum tasks to return (1-100, default: 50)
     - offset: Number of tasks to skip for pagination (default: 0)
 
     **Response:**
     - 200: Array of tasks matching the filter criteria
-    - 401: Not authenticated (missing or invalid auth token)
+    - 401: Not authenticated
 
     **Authentication:**
     - Requires valid JWT token in "auth_token" cookie
 
-    **Example:**
+    **Examples:**
     ```
-    GET /api/tasks?is_complete=false&limit=10&offset=0
-    Cookie: auth_token=eyJhbGc...
+    # Get incomplete high-priority tasks
+    GET /api/tasks?is_complete=false&priority=3&sort_by=priority&sort_order=desc
 
-    Response 200:
-    [
-        {
-            "id": "650e8400-e29b-41d4-a716-446655440001",
-            "title": "Complete project documentation",
-            "description": "Write comprehensive README and API docs",
-            "is_complete": false,
-            "user_id": "550e8400-e29b-41d4-a716-446655440000",
-            "created_at": "2025-12-07T16:00:00Z",
-            "updated_at": "2025-12-07T16:00:00Z"
-        }
-    ]
+    # Search for tasks with "urgent"
+    GET /api/tasks?search=urgent
+
+    # Filter by tags and due date
+    GET /api/tasks?tags=tag_id1,tag_id2&due_date_after=2025-12-01T00:00:00Z
+
+    # Sort by due date, oldest first
+    GET /api/tasks?sort_by=due_date&sort_order=asc
     ```
     """
+    # Parse tags parameter
+    tag_ids = None
+    if tags:
+        tag_ids = [t.strip() for t in tags.split(",") if t.strip()]
+
     tasks = await task_service.get_user_tasks(
         user_id=current_user.id,
         is_complete=is_complete,
+        priority=priority,
+        tag_ids=tag_ids,
+        search=search,
+        due_date_before=due_date_before,
+        due_date_after=due_date_after,
+        sort_by=sort_by,
+        sort_order=sort_order,
         limit=limit,
         offset=offset,
     )

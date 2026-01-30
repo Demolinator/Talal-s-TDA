@@ -4,17 +4,23 @@
  * Individual task card with:
  * - Glassmorphism effect
  * - Completion checkbox
+ * - Priority badge
+ * - Due date display
+ * - Tags display
  * - Edit and delete actions
  * - Smooth animations
  */
 
 "use client";
+
 import { useState } from "react";
 
-import { Trash2, Edit2, Check } from "lucide-react";
+import { Trash2, Edit2, Check, Calendar } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { PriorityBadge } from "./PriorityBadge";
+import { TagBadge } from "./TagBadge";
 import { cn } from "@/lib/utils";
 import type { Task } from "@/types/task";
 
@@ -53,6 +59,24 @@ export function TaskCard({
     }
   };
 
+  // Format due date for display
+  const formatDueDate = (dateStr: string | null) => {
+    if (!dateStr) return null;
+    const date = new Date(dateStr);
+    const now = new Date();
+    const isOverdue = date < now && !task.is_complete;
+
+    return {
+      date: date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+      isOverdue,
+    };
+  };
+
+  const dueDate = formatDueDate(task.due_date);
+
   return (
     <Card
       className={cn(
@@ -89,14 +113,20 @@ export function TaskCard({
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <h3
-              className={cn(
-                "text-base font-semibold text-neutral-900 dark:text-neutral-100 transition-all duration-200",
-                task.is_complete && "line-through text-neutral-500 dark:text-neutral-400"
-              )}
-            >
-              {task.title}
-            </h3>
+            {/* Title and priority row */}
+            <div className="flex items-start gap-2">
+              <h3
+                className={cn(
+                  "text-base font-semibold text-neutral-900 dark:text-neutral-100 transition-all duration-200",
+                  task.is_complete && "line-through text-neutral-500 dark:text-neutral-400"
+                )}
+              >
+                {task.title}
+              </h3>
+              <PriorityBadge priority={task.priority} size="sm" />
+            </div>
+
+            {/* Description */}
             {task.description && (
               <p
                 className={cn(
@@ -107,12 +137,36 @@ export function TaskCard({
                 {task.description}
               </p>
             )}
-            <div className="mt-2 flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+
+            {/* Tags */}
+            {task.tags.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {task.tags.map((tag) => (
+                  <TagBadge key={tag.id} tag={tag} size="sm" />
+                ))}
+              </div>
+            )}
+
+            {/* Due date and created date */}
+            <div className="mt-2 flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
+              {dueDate && (
+                <div
+                  className={cn(
+                    "flex items-center gap-1",
+                    dueDate.isOverdue && "text-red-600 dark:text-red-400 font-medium"
+                  )}
+                >
+                  <Calendar className="h-3 w-3" />
+                  <span>
+                    {dueDate.date}
+                    {dueDate.isOverdue && " (overdue)"}
+                  </span>
+                </div>
+              )}
               <time dateTime={task.created_at}>
-                {new Date(task.created_at).toLocaleDateString("en-US", {
+                Created {new Date(task.created_at).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
-                  year: "numeric",
                 })}
               </time>
             </div>

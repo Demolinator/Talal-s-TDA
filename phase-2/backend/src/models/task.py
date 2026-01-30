@@ -6,10 +6,12 @@ Represents a todo task owned by a user.
 
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import field_validator
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
+
+from src.models.priority import Priority
 
 
 class TaskBase(SQLModel):
@@ -75,6 +77,16 @@ class Task(TaskBase, table=True):
         index=True,  # Index for filtering by completion status
         description="Task completion status",
     )
+    priority: int = Field(
+        default=Priority.MEDIUM,
+        index=True,  # Index for filtering/sorting by priority
+        description="Task priority (1=low, 2=medium, 3=high)",
+    )
+    due_date: Optional[datetime] = Field(
+        default=None,
+        index=True,  # Index for filtering by due date
+        description="Optional due date for the task",
+    )
     # Better Auth uses string IDs (not UUIDs)
     user_id: str = Field(
         foreign_key="user.id",
@@ -90,6 +102,12 @@ class Task(TaskBase, table=True):
         description="Last update timestamp (UTC)",
     )
 
+    # Many-to-many relationship with tags
+    tags: List["Tag"] = Relationship(
+        back_populates="tasks",
+        link_model="TaskTag",
+    )
+
     class Config:
         """SQLModel configuration"""
 
@@ -99,6 +117,8 @@ class Task(TaskBase, table=True):
                 "title": "Complete project documentation",
                 "description": "Write comprehensive README and API docs",
                 "is_complete": False,
+                "priority": 2,
+                "due_date": "2025-12-31T23:59:59Z",
                 "user_id": "550e8400-e29b-41d4-a716-446655440000",
                 "created_at": "2025-12-07T16:00:00Z",
                 "updated_at": "2025-12-07T16:00:00Z",
@@ -109,11 +129,29 @@ class Task(TaskBase, table=True):
 class TaskCreate(TaskBase):
     """Schema for task creation request"""
 
+    priority: int = Field(
+        default=Priority.MEDIUM,
+        ge=Priority.LOW,
+        le=Priority.HIGH,
+        description="Task priority (default: medium)",
+    )
+    due_date: Optional[datetime] = Field(
+        default=None,
+        description="Optional due date for the task",
+    )
+    tag_ids: Optional[List[str]] = Field(
+        default=[],
+        description="Optional list of tag IDs to associate with the task",
+    )
+
     class Config:
         json_schema_extra = {
             "example": {
                 "title": "Complete project documentation",
                 "description": "Write comprehensive README and API docs",
+                "priority": 2,
+                "due_date": "2025-12-31T23:59:59Z",
+                "tag_ids": ["750e8400-e29b-41d4-a716-446655440002"],
             }
         }
 
@@ -135,6 +173,16 @@ class TaskUpdate(SQLModel):
     is_complete: Optional[bool] = Field(
         None,
         description="Updated completion status",
+    )
+    priority: Optional[int] = Field(
+        None,
+        ge=Priority.LOW,
+        le=Priority.HIGH,
+        description="Updated task priority",
+    )
+    due_date: Optional[datetime] = Field(
+        None,
+        description="Updated due date (set to null to clear)",
     )
 
     @field_validator("title", mode="before")
@@ -171,6 +219,8 @@ class TaskUpdate(SQLModel):
                 "title": "Complete project documentation (updated)",
                 "description": "Write README, API docs, and deployment guide",
                 "is_complete": True,
+                "priority": 3,
+                "due_date": "2025-12-31T23:59:59Z",
             }
         }
 
@@ -197,9 +247,12 @@ class TaskResponse(TaskBase):
 
     id: str  # UUID v4 as string (matches Better Auth)
     is_complete: bool
+    priority: int
+    due_date: Optional[datetime]
     user_id: str  # UUID v4 as string (matches Better Auth)
     created_at: datetime
     updated_at: datetime
+    tags: List["TagResponse"] = []  # Associated tags
 
     class Config:
         from_attributes = True  # Allow ORM model conversion
@@ -209,8 +262,23 @@ class TaskResponse(TaskBase):
                 "title": "Complete project documentation",
                 "description": "Write comprehensive README and API docs",
                 "is_complete": False,
+                "priority": 2,
+                "due_date": "2025-12-31T23:59:59Z",
                 "user_id": "550e8400-e29b-41d4-a716-446655440000",
                 "created_at": "2025-12-07T16:00:00Z",
                 "updated_at": "2025-12-07T16:00:00Z",
+                "tags": [
+                    {
+                        "id": "750e8400-e29b-41d4-a716-446655440002",
+                        "name": "work",
+                        "color": "#3b82f6",
+                    }
+                ],
             }
         }
+
+
+# Forward reference for Tag model (circular import)
+from src.models.tag import Tag, TagResponse  # noqa: E402
+
+Task.model_rebuild()

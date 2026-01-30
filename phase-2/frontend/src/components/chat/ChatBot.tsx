@@ -3,15 +3,29 @@
  *
  * Full-featured chat interface for AI-powered todo management.
  * Uses the useChatClient hook for state management and API communication.
+ * Integrates Web Speech API for voice input and output.
  */
 
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, Plus, Loader2, Bot, User, AlertCircle } from "lucide-react";
+import {
+  Send,
+  Plus,
+  Loader2,
+  Bot,
+  User,
+  AlertCircle,
+  Settings,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useChatClient, type ChatMessage } from "@/lib/chat-client";
+import { VoiceInput } from "./VoiceInput";
+import { VoiceSettings } from "./VoiceSettings";
+import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
 
 interface ChatBotProps {
   userId: string | undefined;
@@ -31,10 +45,32 @@ export function ChatBot({ userId }: ChatBotProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  // Voice settings state
+  const [voiceSettingsOpen, setVoiceSettingsOpen] = useState(false);
+  const [recognitionLanguage, setRecognitionLanguage] = useState("en-US");
+  const [synthesisEnabled, setSynthesisEnabled] = useState(false);
+  const [synthesisLanguage, setSynthesisLanguage] = useState("en-US");
+  const [voiceGender, setVoiceGender] = useState<"male" | "female" | "any">("any");
+
+  // Speech synthesis
+  const { speak, isSpeaking } = useSpeechSynthesis({
+    language: synthesisLanguage,
+  });
+
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Auto-speak AI responses when enabled
+  useEffect(() => {
+    if (synthesisEnabled && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === "assistant" && lastMessage.content) {
+        speak(lastMessage.content);
+      }
+    }
+  }, [messages, synthesisEnabled, speak]);
 
   // Auto-focus input
   useEffect(() => {
@@ -47,7 +83,24 @@ export function ChatBot({ userId }: ChatBotProps) {
 
     setInput("");
     await sendMessage(trimmed);
+
+    // Stop any ongoing speech when user sends new message
+    if (isSpeaking) {
+      speak(""); // This will cancel via the cancel call in useSpeechSynthesis
+    }
+
     inputRef.current?.focus();
+  };
+
+  // Handle voice transcript
+  const handleVoiceTranscript = (transcript: string) => {
+    setInput(transcript);
+    // Optionally auto-send after a short delay
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, 100);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -74,15 +127,37 @@ export function ChatBot({ userId }: ChatBotProps) {
             </p>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={startNewConversation}
-          className="gap-1"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          New Chat
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Voice Settings Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setVoiceSettingsOpen(true)}
+            className={cn(
+              "gap-1.5 relative",
+              synthesisEnabled &&
+                "bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800"
+            )}
+            title="Voice settings"
+          >
+            {synthesisEnabled ? (
+              <Volume2 className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+            ) : (
+              <VolumeX className="h-3.5 w-3.5" />
+            )}
+            <Settings className="h-3.5 w-3.5" />
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={startNewConversation}
+            className="gap-1"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            New Chat
+          </Button>
+        </div>
       </div>
 
       {/* Messages Area */}
@@ -132,7 +207,7 @@ export function ChatBot({ userId }: ChatBotProps) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Type a message... (e.g., 'Add a task to buy groceries')"
+            placeholder="Type a message or use voice input... (e.g., 'Add a task to buy groceries')"
             className={cn(
               "flex-1 resize-none rounded-xl border border-neutral-300 dark:border-neutral-700",
               "bg-white dark:bg-neutral-900 px-4 py-2.5 text-sm",
@@ -143,6 +218,15 @@ export function ChatBot({ userId }: ChatBotProps) {
             rows={1}
             disabled={isLoading || !userId}
           />
+
+          {/* Voice Input */}
+          <VoiceInput
+            onTranscript={handleVoiceTranscript}
+            language={recognitionLanguage}
+            onLanguageChange={setRecognitionLanguage}
+            disabled={isLoading || !userId}
+          />
+
           <Button
             onClick={handleSend}
             disabled={!input.trim() || isLoading || !userId}
@@ -152,10 +236,30 @@ export function ChatBot({ userId }: ChatBotProps) {
             <Send className="h-4 w-4" />
           </Button>
         </div>
-        <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500">
-          Press Enter to send, Shift+Enter for new line
+        <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 flex items-center justify-between">
+          <span>Press Enter to send, Shift+Enter for new line</span>
+          {synthesisEnabled && (
+            <span className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
+              <Volume2 className="h-3 w-3" />
+              Voice enabled
+            </span>
+          )}
         </p>
       </div>
+
+      {/* Voice Settings Dialog */}
+      <VoiceSettings
+        open={voiceSettingsOpen}
+        onOpenChange={setVoiceSettingsOpen}
+        recognitionLanguage={recognitionLanguage}
+        onRecognitionLanguageChange={setRecognitionLanguage}
+        synthesisEnabled={synthesisEnabled}
+        onSynthesisEnabledChange={setSynthesisEnabled}
+        synthesisLanguage={synthesisLanguage}
+        onSynthesisLanguageChange={setSynthesisLanguage}
+        voiceGender={voiceGender}
+        onVoiceGenderChange={setVoiceGender}
+      />
     </div>
   );
 }

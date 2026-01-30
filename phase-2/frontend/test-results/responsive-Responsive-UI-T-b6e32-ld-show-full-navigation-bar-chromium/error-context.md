@@ -1,0 +1,45 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e5]:
+    - link "TaskFlow" [ref=e7] [cursor=pointer]:
+      - /url: /
+      - img [ref=e9]
+      - generic [ref=e12]: TaskFlow
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - heading "Welcome Back" [level=3] [ref=e15]
+        - paragraph [ref=e16]: Sign in to your account to continue
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - img [ref=e20]
+            - paragraph [ref=e22]: Failed to fetch
+          - generic [ref=e23]:
+            - text: Email Address
+            - textbox "Email Address" [ref=e24]:
+              - /placeholder: you@example.com
+              - text: test@example.com
+          - generic [ref=e25]:
+            - generic [ref=e26]:
+              - generic [ref=e27]: Password
+              - link "Forgot password?" [ref=e28] [cursor=pointer]:
+                - /url: /forgot-password
+            - textbox "Password" [ref=e29]:
+              - /placeholder: ••••••••
+              - text: password123
+        - generic [ref=e30]:
+          - button "Sign In" [ref=e31] [cursor=pointer]
+          - generic [ref=e36]: Or
+          - button "Continue with Google" [disabled]:
+            - img
+            - text: Continue with Google
+          - paragraph [ref=e37]:
+            - text: Don't have an account?
+            - link "Sign up for free" [ref=e38] [cursor=pointer]:
+              - /url: /signup
+    - paragraph [ref=e39]: Protected by enterprise-grade security
+  - region "Notifications alt+T"
+  - alert [ref=e40]
+```

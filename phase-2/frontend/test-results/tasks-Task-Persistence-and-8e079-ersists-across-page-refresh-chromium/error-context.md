@@ -1,0 +1,63 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e5]:
+    - link "TaskFlow" [ref=e7] [cursor=pointer]:
+      - /url: /
+      - img [ref=e9]
+      - generic [ref=e12]: TaskFlow
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - heading "Create Account" [level=3] [ref=e15]
+        - paragraph [ref=e16]: Get started with TaskFlow for free
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - text: Full Name
+            - textbox "Full Name" [ref=e20]:
+              - /placeholder: John Doe
+              - text: Task Test User
+          - generic [ref=e21]:
+            - text: Email Address
+            - textbox "Email Address" [ref=e22]:
+              - /placeholder: you@example.com
+              - text: task-test-1769793420945-3f9j5@example.com
+          - generic [ref=e23]:
+            - text: Password
+            - textbox "Password" [active] [ref=e24]:
+              - /placeholder: ••••••••
+              - text: TaskTest123!
+            - generic [ref=e25]:
+              - paragraph [ref=e26]: "Password must contain:"
+              - generic [ref=e27]:
+                - generic [ref=e28]:
+                  - img [ref=e30]
+                  - generic [ref=e32]: At least 8 characters
+                - generic [ref=e33]:
+                  - img [ref=e35]
+                  - generic [ref=e37]: One number
+                - generic [ref=e38]:
+                  - img [ref=e40]
+                  - generic [ref=e42]: One special character
+        - generic [ref=e43]:
+          - button "Create Account" [ref=e44] [cursor=pointer]
+          - generic [ref=e49]: Or
+          - button "Continue with Google" [disabled]:
+            - img
+            - text: Continue with Google
+          - paragraph [ref=e50]:
+            - text: By creating an account, you agree to our
+            - link "Terms of Service" [ref=e51] [cursor=pointer]:
+              - /url: /terms
+            - text: and
+            - link "Privacy Policy" [ref=e52] [cursor=pointer]:
+              - /url: /privacy
+          - paragraph [ref=e53]:
+            - text: Already have an account?
+            - link "Sign in" [ref=e54] [cursor=pointer]:
+              - /url: /login
+    - paragraph [ref=e55]: Join thousands of productive users
+  - region "Notifications alt+T"
+  - alert [ref=e56]
+```

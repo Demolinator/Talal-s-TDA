@@ -6,8 +6,8 @@
  *
  * @see frontend/CLAUDE.md for API integration patterns
  *
- * CACHE BUST: v4.0 - AUTHORIZATION HEADER - CROSS-DOMAIN FIX
- * Last updated: 2025-12-27 19:30 UTC
+ * CACHE BUST: v5.0 - ADD PRIORITY, TAGS, SEARCH, FILTER, SORT
+ * Last updated: 2025-01-31 02:40 UTC
  */
 
 import { getAuthToken } from "./token-storage";
@@ -137,6 +137,21 @@ export async function fetchAPI<T>(
 // ==============================================================================
 
 /**
+ * Priority levels (matches backend Priority enum)
+ */
+export type Priority = 1 | 2 | 3; // low | medium | high
+
+/**
+ * Tag model (matches backend TagResponse)
+ */
+export interface Tag {
+  id: string; // UUID
+  name: string; // Lowercase, unique per user
+  color: string; // Hex color code (e.g., "#3b82f6")
+  user_id: string; // UUID
+}
+
+/**
  * Task model (matches backend TaskResponse)
  */
 export interface Task {
@@ -144,9 +159,12 @@ export interface Task {
   title: string;
   description: string | null;
   is_complete: boolean;
+  priority: Priority;
+  due_date: string | null; // ISO 8601
   user_id: string; // UUID
   created_at: string; // ISO 8601
   updated_at: string; // ISO 8601
+  tags: Tag[]; // Associated tags
 }
 
 /**
@@ -155,6 +173,9 @@ export interface Task {
 export interface TaskCreate {
   title: string;
   description?: string | null;
+  priority?: Priority;
+  due_date?: string | null; // ISO 8601
+  tag_ids?: string[]; // Array of tag UUIDs
 }
 
 /**
@@ -164,6 +185,24 @@ export interface TaskUpdate {
   title?: string;
   description?: string | null;
   is_complete?: boolean;
+  priority?: Priority;
+  due_date?: string | null;
+}
+
+/**
+ * Task list query parameters
+ */
+export interface TaskListParams {
+  is_complete?: boolean; // Filter by completion status
+  priority?: Priority; // Filter by priority
+  tags?: string; // Comma-separated tag IDs
+  search?: string; // Search query for title/description
+  due_date_before?: string; // ISO 8601 datetime
+  due_date_after?: string; // ISO 8601 datetime
+  sort_by?: "created_at" | "due_date" | "priority" | "title" | "updated_at";
+  sort_order?: "asc" | "desc";
+  limit?: number; // Max tasks to return (1-100)
+  offset?: number; // Skip first N tasks
 }
 
 /**
@@ -177,12 +216,98 @@ export interface TaskListResponse {
 }
 
 /**
- * Task list query parameters
+ * Tag creation input
  */
-export interface TaskListParams {
-  is_complete?: boolean; // Filter by completion status
-  limit?: number; // Max tasks to return (1-100)
-  offset?: number; // Skip first N tasks (pagination)
+export interface TagCreate {
+  name: string;
+  color?: string;
+}
+
+/**
+ * Tag update input (all fields optional)
+ */
+export interface TagUpdate {
+  name?: string;
+  color?: string;
+}
+
+// ==============================================================================
+// Tag API Functions
+// ==============================================================================
+
+/**
+ * Get all tags for authenticated user
+ */
+export async function getTags(): Promise<Tag[]> {
+  return fetchAPI<Tag[]>("/api/tags");
+}
+
+/**
+ * Get a single tag by ID
+ */
+export async function getTag(tagId: string): Promise<Tag> {
+  return fetchAPI<Tag>(`/api/tags/${tagId}`);
+}
+
+/**
+ * Create a new tag
+ */
+export async function createTag(data: TagCreate): Promise<Tag> {
+  return fetchAPI<Tag>("/api/tags", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Update a tag
+ */
+export async function updateTag(tagId: string, data: TagUpdate): Promise<Tag> {
+  return fetchAPI<Tag>(`/api/tags/${tagId}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Delete a tag
+ */
+export async function deleteTag(tagId: string): Promise<void> {
+  return fetchAPI<void>(`/api/tags/${tagId}`, {
+    method: "DELETE",
+  });
+}
+
+// ==============================================================================
+// Task-Tag Association Functions
+// ==============================================================================
+
+/**
+ * Add a tag to a task
+ */
+export async function addTagToTask(taskId: string, tagId: string): Promise<Task> {
+  return fetchAPI<Task>(`/api/tags/tasks/${taskId}/tags/${tagId}`, {
+    method: "POST",
+  });
+}
+
+/**
+ * Remove a tag from a task
+ */
+export async function removeTagFromTask(taskId: string, tagId: string): Promise<Task> {
+  return fetchAPI<Task>(`/api/tags/tasks/${taskId}/tags/${tagId}`, {
+    method: "DELETE",
+  });
+}
+
+/**
+ * Replace all tags on a task
+ */
+export async function setTaskTags(taskId: string, tagIds: string[]): Promise<Task> {
+  return fetchAPI<Task>(`/api/tags/tasks/${taskId}/tags`, {
+    method: "PUT",
+    body: JSON.stringify({ tag_ids: tagIds }),
+  });
 }
 
 // ==============================================================================
@@ -192,29 +317,61 @@ export interface TaskListParams {
 /**
  * Get all tasks for authenticated user
  *
- * @param params - Optional filter and pagination params
+ * @param params - Optional filter, search, sort, and pagination params
  * @returns List of tasks with pagination metadata
  * @throws APIError on failure
  *
  * @example
  * ```typescript
  * // Get all tasks
- * const { tasks, total } = await getTasks();
+ * const tasks = await getTasks();
  *
- * // Get incomplete tasks only
- * const { tasks } = await getTasks({ is_complete: false });
+ * // Get incomplete high-priority tasks
+ * const tasks = await getTasks({
+ *   is_complete: false,
+ *   priority: 3,
+ *   sort_by: "priority",
+ *   sort_order: "desc"
+ * });
  *
- * // Get tasks with pagination
- * const { tasks } = await getTasks({ limit: 10, offset: 0 });
+ * // Search for tasks with "urgent"
+ * const tasks = await getTasks({ search: "urgent" });
+ *
+ * // Filter by tags and due date
+ * const tasks = await getTasks({
+ *   tags: "tag_id1,tag_id2",
+ *   due_date_after: "2025-12-01T00:00:00Z"
+ * });
  * ```
  */
 export async function getTasks(
   params?: TaskListParams
-): Promise<TaskListResponse> {
+): Promise<Task[]> {
   const searchParams = new URLSearchParams();
 
   if (params?.is_complete !== undefined) {
     searchParams.set("is_complete", String(params.is_complete));
+  }
+  if (params?.priority !== undefined) {
+    searchParams.set("priority", String(params.priority));
+  }
+  if (params?.tags !== undefined) {
+    searchParams.set("tags", params.tags);
+  }
+  if (params?.search !== undefined) {
+    searchParams.set("search", params.search);
+  }
+  if (params?.due_date_before !== undefined) {
+    searchParams.set("due_date_before", params.due_date_before);
+  }
+  if (params?.due_date_after !== undefined) {
+    searchParams.set("due_date_after", params.due_date_after);
+  }
+  if (params?.sort_by !== undefined) {
+    searchParams.set("sort_by", params.sort_by);
+  }
+  if (params?.sort_order !== undefined) {
+    searchParams.set("sort_order", params.sort_order);
   }
   if (params?.limit !== undefined) {
     searchParams.set("limit", String(params.limit));
@@ -224,21 +381,11 @@ export async function getTasks(
   }
 
   const query = searchParams.toString();
-  return fetchAPI<TaskListResponse>(`/api/tasks${query ? `?${query}` : ""}`);
+  return fetchAPI<Task[]>(`/api/tasks${query ? `?${query}` : ""}`);
 }
 
 /**
  * Get a single task by ID
- *
- * @param taskId - Task UUID
- * @returns Task details
- * @throws APIError if not found or unauthorized
- *
- * @example
- * ```typescript
- * const task = await getTask("550e8400-e29b-41d4-a716-446655440000");
- * console.log(task.title);
- * ```
  */
 export async function getTask(taskId: string): Promise<Task> {
   return fetchAPI<Task>(`/api/tasks/${taskId}`);
@@ -246,18 +393,6 @@ export async function getTask(taskId: string): Promise<Task> {
 
 /**
  * Create a new task
- *
- * @param data - Task creation data
- * @returns Created task
- * @throws APIError on validation error or failure
- *
- * @example
- * ```typescript
- * const newTask = await createTask({
- *   title: "Buy groceries",
- *   description: "Milk, eggs, bread"
- * });
- * ```
  */
 export async function createTask(data: TaskCreate): Promise<Task> {
   return fetchAPI<Task>("/api/tasks", {
@@ -268,23 +403,6 @@ export async function createTask(data: TaskCreate): Promise<Task> {
 
 /**
  * Update an existing task
- *
- * @param taskId - Task UUID
- * @param data - Fields to update (partial update)
- * @returns Updated task
- * @throws APIError if not found or unauthorized
- *
- * @example
- * ```typescript
- * // Mark task as complete
- * const updated = await updateTask(taskId, { is_complete: true });
- *
- * // Update title and description
- * const updated = await updateTask(taskId, {
- *   title: "New title",
- *   description: "Updated description"
- * });
- * ```
  */
 export async function updateTask(
   taskId: string,
@@ -298,14 +416,6 @@ export async function updateTask(
 
 /**
  * Delete a task
- *
- * @param taskId - Task UUID
- * @throws APIError if not found or unauthorized
- *
- * @example
- * ```typescript
- * await deleteTask("550e8400-e29b-41d4-a716-446655440000");
- * ```
  */
 export async function deleteTask(taskId: string): Promise<void> {
   return fetchAPI<void>(`/api/tasks/${taskId}`, {
@@ -317,17 +427,6 @@ export async function deleteTask(taskId: string): Promise<void> {
  * Toggle task completion status
  *
  * Convenience function to toggle is_complete field.
- *
- * @param task - Task to toggle
- * @returns Updated task
- * @throws APIError on failure
- *
- * @example
- * ```typescript
- * const task = { id: "...", is_complete: false, ... };
- * const toggled = await toggleTaskComplete(task);
- * console.log(toggled.is_complete); // true
- * ```
  */
 export async function toggleTaskComplete(task: Task): Promise<Task> {
   return updateTask(task.id, { is_complete: !task.is_complete });

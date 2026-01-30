@@ -51,7 +51,38 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/typography'),
+    function({ addUtilities }: { addUtilities: (utilities: Record<string, any>) => void }) {
+      const newUtilities = {
+        '.rtl': {
+          direction: 'rtl',
+        },
+        '.ltr': {
+          direction: 'ltr',
+        },
+        '.text-start': {
+          textAlign: 'start',
+        },
+        '.text-end': {
+          textAlign: 'end',
+        },
+        '.ms-auto': {
+          marginInlineStart: 'auto',
+        },
+        '.me-auto': {
+          marginInlineEnd: 'auto',
+        },
+        '.ps-0': {
+          paddingInlineStart: '0',
+        },
+        '.pe-0': {
+          paddingInlineEnd: '0',
+        },
+      };
+      addUtilities(newUtilities);
+    }
+  ],
 };
 
 export default config;

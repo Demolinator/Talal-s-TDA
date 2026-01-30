@@ -4,6 +4,7 @@
  * Top navigation bar with:
  * - Logo and app name
  * - Add Task button
+ * - Language switcher
  * - Theme toggle
  * - User menu with profile and logout
  */
@@ -12,6 +13,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { CheckCircle2, Plus, User, LogOut, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { authClient } from "@/lib/auth";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -32,7 +35,9 @@ interface HeaderProps {
 }
 
 export function Header({ onAddTask }: HeaderProps) {
+  const t = useTranslations('nav');
   const router = useRouter();
+  const locale = useLocale();
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -55,7 +60,7 @@ export function Header({ onAddTask }: HeaderProps) {
     try {
       await authClient.signOut();
       toast.success("Logged out successfully");
-      router.push("/login");
+      router.push(`/${locale}/login`);
     } catch (error) {
       toast.error("Failed to logout");
       console.error("Logout error:", error);
@@ -77,7 +82,7 @@ export function Header({ onAddTask }: HeaderProps) {
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo and Brand */}
         <Link
-          href="/dashboard"
+          href={`/${locale}/dashboard`}
           className="flex items-center gap-2 transition-opacity hover:opacity-80"
         >
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
@@ -97,9 +102,9 @@ export function Header({ onAddTask }: HeaderProps) {
             size="sm"
             className="gap-1"
           >
-            <Link href="/chat">
+            <Link href={`/${locale}/chat`}>
               <MessageSquare className="h-4 w-4 sm:mr-1" />
-              <span className="hidden sm:inline">AI Chat</span>
+              <span className="hidden sm:inline">{t('chat')}</span>
             </Link>
           </Button>
 
@@ -111,9 +116,12 @@ export function Header({ onAddTask }: HeaderProps) {
               size="sm"
             >
               <Plus className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Add Task</span>
+              <span className="hidden sm:inline">{t('tasks')}</span>
             </Button>
           )}
+
+          {/* Language Switcher */}
+          <LanguageSwitcher />
 
           {/* Theme Toggle */}
           <ThemeToggle />
@@ -150,9 +158,9 @@ export function Header({ onAddTask }: HeaderProps) {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/dashboard" className="cursor-pointer">
+                <Link href={`/${locale}/dashboard`} className="cursor-pointer">
                   <User className="mr-2 h-4 w-4" />
-                  <span>Dashboard</span>
+                  <span>{t('dashboard')}</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -161,7 +169,7 @@ export function Header({ onAddTask }: HeaderProps) {
                 className="cursor-pointer text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
               >
                 <LogOut className="mr-2 h-4 w-4" />
-                <span>Logout</span>
+                <span>{t('logout')}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

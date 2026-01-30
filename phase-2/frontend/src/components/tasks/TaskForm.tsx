@@ -6,10 +6,14 @@
  * - Zod validation
  * - Error handling
  * - Loading states
+ * - Priority selection
+ * - Due date input
+ * - Tag selection
  */
 
 "use client";
 
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -17,7 +21,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import type { Task, TaskCreate } from "@/types/task";
+import { PrioritySelector } from "./PrioritySelector";
+import { TagSelector } from "./TagSelector";
+import type { Task, TaskCreate, Priority } from "@/types/task";
+import type { Tag } from "@/types/tag";
+import { getTags } from "@/lib/api";
 
 // Validation schema
 const taskSchema = z.object({
@@ -30,6 +38,9 @@ const taskSchema = z.object({
     .max(2000, "Description must be 2000 characters or less")
     .optional()
     .nullable(),
+  priority: z.number().int().min(1).max(3).optional(),
+  due_date: z.string().optional().nullable(),
+  tag_ids: z.array(z.string()).optional(),
 });
 
 type TaskFormData = z.infer<typeof taskSchema>;
@@ -39,6 +50,7 @@ interface TaskFormProps {
   onCancel?: () => void;
   initialData?: Task;
   isLoading?: boolean;
+  availableTags?: Tag[];
 }
 
 export function TaskForm({
@@ -46,34 +58,59 @@ export function TaskForm({
   onCancel,
   initialData,
   isLoading = false,
+  availableTags = [],
 }: TaskFormProps) {
+  const [tags, setTags] = useState<Tag[]>(availableTags);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>(
+    initialData?.tags.map((t) => t.id) || []
+  );
+
+  // Fetch tags if not provided
+  useEffect(() => {
+    if (availableTags.length === 0) {
+      getTags().then(setTags).catch(console.error);
+    }
+  }, [availableTags]);
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
     watch,
+    setValue,
   } = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
       title: initialData?.title || "",
       description: initialData?.description || "",
+      priority: initialData?.priority || 2,
+      due_date: initialData?.due_date
+        ? new Date(initialData.due_date).toISOString().split("T")[0]
+        : "",
+      tag_ids: initialData?.tags.map((t) => t.id) || [],
     },
   });
 
   const title = watch("title") || "";
   const description = watch("description") || "";
+  const priority = watch("priority") as Priority | undefined;
+  const dueDate = watch("due_date");
 
   const onFormSubmit = async (data: TaskFormData) => {
     try {
       await onSubmit({
         title: data.title.trim(),
         description: data.description?.trim() || null,
+        priority: data.priority || 2,
+        due_date: data.due_date ? new Date(data.due_date).toISOString() : null,
+        tag_ids: selectedTagIds,
       });
 
       // Reset form if creating new task (no initialData)
       if (!initialData) {
         reset();
+        setSelectedTagIds([]);
       }
     } catch (error) {
       // Error is handled by parent component via toast
@@ -126,6 +163,40 @@ export function TaskForm({
         <p className="text-xs text-neutral-500 dark:text-neutral-400">
           {description.length}/2000 characters
         </p>
+      </div>
+
+      {/* Priority Selector */}
+      <div className="space-y-2">
+        <Label>Priority</Label>
+        <PrioritySelector
+          value={priority || 2}
+          onChange={(p) => setValue("priority", p)}
+          disabled={isLoading || isSubmitting}
+        />
+      </div>
+
+      {/* Due Date Field */}
+      <div className="space-y-2">
+        <Label htmlFor="due_date">Due Date (optional)</Label>
+        <Input
+          id="due_date"
+          type="date"
+          {...register("due_date")}
+          disabled={isLoading || isSubmitting}
+          className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm"
+          min={new Date().toISOString().split("T")[0]}
+        />
+      </div>
+
+      {/* Tag Selector */}
+      <div className="space-y-2">
+        <Label>Tags</Label>
+        <TagSelector
+          selectedTagIds={selectedTagIds}
+          availableTags={tags}
+          onChange={setSelectedTagIds}
+          disabled={isLoading || isSubmitting}
+        />
       </div>
 
       {/* Actions */}
