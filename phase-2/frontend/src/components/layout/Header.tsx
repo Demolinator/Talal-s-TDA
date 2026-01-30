@@ -12,7 +12,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { CheckCircle2, Plus, User, LogOut } from "lucide-react";
+import { CheckCircle2, Plus, User, LogOut, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -90,6 +90,19 @@ export function Header({ onAddTask }: HeaderProps) {
 
         {/* Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Chat Button */}
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="gap-1"
+          >
+            <Link href="/chat">
+              <MessageSquare className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">AI Chat</span>
+            </Link>
+          </Button>
+
           {/* Add Task Button */}
           {onAddTask && (
             <Button
