@@ -97,7 +97,8 @@
     "and": "and",
     "privacyPolicy": "Privacy Policy",
     "signUpFree": "Sign up for free",
-    "protectedBySecurity": "Protected by enterprise-grade security"
+    "protectedBySecurity": "Protected by enterprise-grade security",
+    "or": "or"
   },
   "settings": {
     "title": "Settings",
