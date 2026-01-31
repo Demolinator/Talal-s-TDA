@@ -164,11 +164,16 @@ class MessageCreate(SQLModel):
         min_length=1,
         description="Message text content",
     )
+    conversation_id: Optional[UUID] = Field(
+        default=None,
+        description="Optional conversation ID to continue existing conversation",
+    )
 
     class Config:
         json_schema_extra = {
             "example": {
                 "content": "Show me all my pending tasks",
+                "conversation_id": None,
             }
         }
 

@@ -10,6 +10,8 @@ from typing import List, Optional
 from pydantic import field_validator
 from sqlmodel import Field, Relationship, SQLModel
 
+from src.models.task_tag import TaskTag
+
 
 # Predefined color palette for tags
 TAG_COLORS = [
@@ -116,7 +118,7 @@ class Tag(TagBase, table=True):
     # Many-to-many relationship with tasks
     tasks: List["Task"] = Relationship(
         back_populates="tags",
-        link_model="TaskTag",
+        link_model=TaskTag,
     )
 
     class Config:

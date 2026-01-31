@@ -10,7 +10,9 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from src.api.dependencies import get_event_publisher
 from src.auth.dependencies import get_current_user
+from src.events.dapr_publisher import DaprEventPublisher
 from src.models.priority import Priority
 from src.models.task import Task, TaskCreate, TaskResponse, TaskToggleComplete, TaskUpdate
 from src.models.user import User
@@ -167,6 +169,7 @@ async def create_task(
     task_data: TaskCreate,
     current_user: User = Depends(get_current_user),
     task_service: TaskService = Depends(),
+    event_publisher: DaprEventPublisher = Depends(get_event_publisher),
 ):
     """
     Create new task for authenticated user.
@@ -214,6 +217,24 @@ async def create_task(
     """
     try:
         task = await task_service.create_task(task_data, current_user.id)
+
+        # Publish task.created event (fire-and-forget, non-blocking)
+        await event_publisher.publish_task_event(
+            event_type="task.created",
+            task_data={
+                "id": task.id,
+                "title": task.title,
+                "description": task.description,
+                "is_complete": task.is_complete,
+                "priority": task.priority,
+                "due_date": task.due_date.isoformat() if task.due_date else None,
+                "user_id": task.user_id,
+                "created_at": task.created_at.isoformat(),
+                "updated_at": task.updated_at.isoformat(),
+            },
+            user_id=current_user.id,
+        )
+
         return task
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -373,6 +394,7 @@ async def update_task(
     task_data: TaskUpdate,
     current_user: User = Depends(get_current_user),
     task_service: TaskService = Depends(),
+    event_publisher: DaprEventPublisher = Depends(get_event_publisher),
 ):
     """
     Update task fields.
@@ -428,6 +450,24 @@ async def update_task(
     """
     try:
         task = await task_service.update_task(task_id, task_data, current_user.id)
+
+        # Publish task.updated event (fire-and-forget, non-blocking)
+        await event_publisher.publish_task_event(
+            event_type="task.updated",
+            task_data={
+                "id": task.id,
+                "title": task.title,
+                "description": task.description,
+                "is_complete": task.is_complete,
+                "priority": task.priority,
+                "due_date": task.due_date.isoformat() if task.due_date else None,
+                "user_id": task.user_id,
+                "created_at": task.created_at.isoformat(),
+                "updated_at": task.updated_at.isoformat(),
+            },
+            user_id=current_user.id,
+        )
+
         return task
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -493,6 +533,7 @@ async def patch_task(
     task_data: TaskUpdate,
     current_user: User = Depends(get_current_user),
     task_service: TaskService = Depends(),
+    event_publisher: DaprEventPublisher = Depends(get_event_publisher),
 ):
     """
     Partially update task fields (PATCH method).
@@ -552,6 +593,43 @@ async def patch_task(
     """
     try:
         task = await task_service.update_task(task_id, task_data, current_user.id)
+
+        # Publish task.updated event (fire-and-forget, non-blocking)
+        # Note: If only is_complete changed to True, this will also trigger task.completed
+        await event_publisher.publish_task_event(
+            event_type="task.updated",
+            task_data={
+                "id": task.id,
+                "title": task.title,
+                "description": task.description,
+                "is_complete": task.is_complete,
+                "priority": task.priority,
+                "due_date": task.due_date.isoformat() if task.due_date else None,
+                "user_id": task.user_id,
+                "created_at": task.created_at.isoformat(),
+                "updated_at": task.updated_at.isoformat(),
+            },
+            user_id=current_user.id,
+        )
+
+        # If task was marked complete, also publish task.completed event
+        if task.is_complete:
+            await event_publisher.publish_task_event(
+                event_type="task.completed",
+                task_data={
+                    "id": task.id,
+                    "title": task.title,
+                    "description": task.description,
+                    "is_complete": task.is_complete,
+                    "priority": task.priority,
+                    "due_date": task.due_date.isoformat() if task.due_date else None,
+                    "user_id": task.user_id,
+                    "created_at": task.created_at.isoformat(),
+                    "updated_at": task.updated_at.isoformat(),
+                },
+                user_id=current_user.id,
+            )
+
         return task
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -609,6 +687,7 @@ async def toggle_task_complete(
     toggle_data: TaskToggleComplete,
     current_user: User = Depends(get_current_user),
     task_service: TaskService = Depends(),
+    event_publisher: DaprEventPublisher = Depends(get_event_publisher),
 ):
     """
     Toggle task completion status.
@@ -661,6 +740,43 @@ async def toggle_task_complete(
     task = await task_service.toggle_complete(
         task_id, toggle_data.is_complete, current_user.id
     )
+
+    # Publish appropriate event based on new completion status
+    if toggle_data.is_complete:
+        # Task was completed
+        await event_publisher.publish_task_event(
+            event_type="task.completed",
+            task_data={
+                "id": task.id,
+                "title": task.title,
+                "description": task.description,
+                "is_complete": task.is_complete,
+                "priority": task.priority,
+                "due_date": task.due_date.isoformat() if task.due_date else None,
+                "user_id": task.user_id,
+                "created_at": task.created_at.isoformat(),
+                "updated_at": task.updated_at.isoformat(),
+            },
+            user_id=current_user.id,
+        )
+    else:
+        # Task was uncompleted (still publish as updated event)
+        await event_publisher.publish_task_event(
+            event_type="task.updated",
+            task_data={
+                "id": task.id,
+                "title": task.title,
+                "description": task.description,
+                "is_complete": task.is_complete,
+                "priority": task.priority,
+                "due_date": task.due_date.isoformat() if task.due_date else None,
+                "user_id": task.user_id,
+                "created_at": task.created_at.isoformat(),
+                "updated_at": task.updated_at.isoformat(),
+            },
+            user_id=current_user.id,
+        )
+
     return task
 
 
@@ -701,6 +817,7 @@ async def delete_task(
     task_id: str,
     current_user: User = Depends(get_current_user),
     task_service: TaskService = Depends(),
+    event_publisher: DaprEventPublisher = Depends(get_event_publisher),
 ):
     """
     Delete task permanently.
@@ -735,5 +852,27 @@ async def delete_task(
     Response 204: (no content)
     ```
     """
+    # Get task before deletion for event publishing
+    task = await task_service.get_task(task_id, current_user.id)
+
+    # Delete the task
     await task_service.delete_task(task_id, current_user.id)
+
+    # Publish task.deleted event (fire-and-forget, non-blocking)
+    await event_publisher.publish_task_event(
+        event_type="task.deleted",
+        task_data={
+            "id": task.id,
+            "title": task.title,
+            "description": task.description,
+            "is_complete": task.is_complete,
+            "priority": task.priority,
+            "due_date": task.due_date.isoformat() if task.due_date else None,
+            "user_id": task.user_id,
+            "created_at": task.created_at.isoformat(),
+            "updated_at": task.updated_at.isoformat(),
+        },
+        user_id=current_user.id,
+    )
+
     return None

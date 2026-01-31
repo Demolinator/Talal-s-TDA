@@ -83,7 +83,7 @@ export function CategoryPicker({
         <div className="flex gap-2">
           <Select
             value={value || "none"}
-            onValueChange={(v) => onChange(v === "none" ? null : v)}
+            onValueChange={(v: string) => onChange(v === "none" ? null : v)}
             disabled={disabled}
           >
             <SelectTrigger className="flex-1">

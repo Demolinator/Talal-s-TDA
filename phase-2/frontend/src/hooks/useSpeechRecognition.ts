@@ -58,11 +58,9 @@ export function supportsSpeechRecognition(): boolean {
 
 // Speech Recognition API (with webkit prefix for Chrome/Edge)
 const SpeechRecognitionAPI =
-  (typeof window !== "undefined" &&
-    ("SpeechRecognition" in window
-      ? window.SpeechRecognition
-      : window.webkitSpeechRecognition)) ||
-  null;
+  typeof window !== "undefined"
+    ? (window.SpeechRecognition || window.webkitSpeechRecognition || null)
+    : null;
 
 class SpeechRecognition extends EventTarget {
   continuous = false;
@@ -190,14 +188,14 @@ export function useSpeechRecognition(options: SpeechRecognitionOptions = {}) {
 
       recognition.addEventListener("error", (event: any) => {
         setIsListening(false);
-        const errorMessage =
-          {
-            "no-speech": "No speech detected. Please try again.",
-            "audio-capture": "No microphone found. Please ensure a microphone is connected.",
-            "not-allowed": "Microphone permission denied. Please allow microphone access.",
-            "network": "Network error. Please check your connection.",
-            "aborted": "Speech recognition was aborted.",
-          }[event.error] || event.error;
+        const errorMessages: Record<string, string> = {
+          "no-speech": "No speech detected. Please try again.",
+          "audio-capture": "No microphone found. Please ensure a microphone is connected.",
+          "not-allowed": "Microphone permission denied. Please allow microphone access.",
+          "network": "Network error. Please check your connection.",
+          "aborted": "Speech recognition was aborted.",
+        };
+        const errorMessage = errorMessages[event.error] || event.error;
 
         setError({
           error: event.error,

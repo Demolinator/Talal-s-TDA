@@ -21,7 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tag, X, Plus, Check } from "lucide-react";
+import { Tag as TagIcon, X, Plus, Check } from "lucide-react";
 
 interface TagSelectorProps {
   selectedTagIds: string[];
@@ -130,7 +130,7 @@ export function TagSelector({
             disabled={disabled}
             className="gap-2"
           >
-            <Tag className="h-4 w-4" />
+            <TagIcon className="h-4 w-4" />
             {selectedTags.length === 0 ? "Add tags" : `${selectedTags.length} tag${selectedTags.length > 1 ? "s" : ""}`}
           </Button>
         </DropdownMenuTrigger>

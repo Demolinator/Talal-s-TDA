@@ -7,19 +7,27 @@ Phase II Full-Stack Todo Application
 import logging
 import os
 import uuid
+from typing import Optional
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from starlette.middleware import Middleware
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.middleware.trustedhost import TrustedHostMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from sqlmodel import Session, select
 
 from src.api import auth, chat, health, tasks
+from src.auth.dependencies import get_current_user
+from src.db.session import get_session
+from src.models.conversation import (
+    Conversation,
+    Message,
+    MessageCreate,
+)
+from src.models.user import User
+from src.services.agent_service import AgentService
 
 # Load environment variables
 load_dotenv()
@@ -252,6 +260,142 @@ app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(tasks.router)
 app.include_router(chat.router)
+
+
+@app.post("/api/{user_id}/chat", response_model=dict, status_code=status.HTTP_200_OK, tags=["chat"])
+async def chat(
+    user_id: str,
+    req: MessageCreate,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """
+    Send a chat message and get AI assistant response.
+
+    This endpoint provides a simplified chat interface that automatically
+    handles conversation creation and management. Users can provide a
+    conversation_id to continue an existing conversation, or omit it to
+    create a new conversation.
+
+    Args:
+        user_id: UUID of the user (must match authenticated user)
+        req: MessageCreate with user message content and optional conversation_id
+        current_user: Authenticated user
+        session: Database session
+
+    Returns:
+        Dictionary with conversation_id, message_id, content, tool_calls, and created_at
+
+    Raises:
+        403: user_id doesn't match authenticated user
+        500: Agent processing failed
+    """
+    try:
+        # Verify user_id matches current_user.id (Better Auth uses string IDs)
+        if user_id != str(current_user.id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to access this resource",
+            )
+
+        # Get or create conversation
+        if req.conversation_id:
+            # Use existing conversation
+            conversation = session.get(Conversation, req.conversation_id)
+
+            if not conversation:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Conversation not found",
+                )
+
+            if conversation.user_id != current_user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Not authorized to access this conversation",
+                )
+        else:
+            # Create new conversation
+            conversation = Conversation(
+                user_id=current_user.id,
+                title=None,  # Auto-generated from first message
+            )
+            session.add(conversation)
+            session.commit()
+            session.refresh(conversation)
+
+        # Store user message
+        user_message = Message(
+            conversation_id=conversation.id,
+            user_id=current_user.id,
+            role="user",
+            content=req.content,
+        )
+
+        session.add(user_message)
+        session.commit()
+        session.refresh(user_message)
+
+        # Retrieve conversation history (last 20 messages for context)
+        history_query = (
+            select(Message)
+            .where(Message.conversation_id == conversation.id)
+            .order_by(Message.created_at.asc())
+            .limit(20)
+        )
+        history_messages = session.exec(history_query).all()
+
+        # Format history for API
+        conversation_history = [
+            {"role": msg.role, "content": msg.content} for msg in history_messages
+        ]
+
+        # Process message through agent
+        agent_service = AgentService(session)
+        agent_result = agent_service.process_user_message(
+            user_id=str(current_user.id),
+            user_message=req.content,
+            conversation_history=conversation_history,
+        )
+
+        if not agent_result["success"]:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=agent_result.get("error", "Agent processing failed"),
+            )
+
+        # Store assistant message
+        assistant_message = Message(
+            conversation_id=conversation.id,
+            user_id=current_user.id,
+            role="assistant",
+            content=agent_result["assistant_message"],
+            tool_calls=agent_service.format_tool_calls_for_storage(
+                agent_result.get("tool_calls", [])
+            ),
+        )
+
+        session.add(assistant_message)
+        conversation.updated_at = conversation.updated_at  # Trigger update
+        session.add(conversation)
+        session.commit()
+
+        return {
+            "conversation_id": str(conversation.id),
+            "message_id": str(assistant_message.id),
+            "content": agent_result["assistant_message"],
+            "tool_calls": agent_result.get("tool_calls", []),
+            "created_at": assistant_message.created_at.isoformat(),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to process message: {str(e)}",
+        )
 
 
 @app.get("/")

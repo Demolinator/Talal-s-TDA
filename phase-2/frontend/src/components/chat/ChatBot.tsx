@@ -1,8 +1,8 @@
 /**
- * ChatBot Component
+ * ChatBot Component - Enhanced with Vercel AI SDK v6.0
  *
  * Full-featured chat interface for AI-powered todo management.
- * Uses the useChatClient hook for state management and API communication.
+ * Uses Vercel AI SDK's useChat hook with custom transport.
  * Integrates Web Speech API for voice input and output.
  */
 
@@ -22,28 +22,31 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useChatClient, type ChatMessage } from "@/lib/chat-client";
+import { useChat } from "@ai-sdk/react";
+import { createFastApiChatTransport } from "@/lib/chat-transport";
 import { VoiceInput } from "./VoiceInput";
 import { VoiceSettings } from "./VoiceSettings";
 import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
+import type { UIMessage } from "ai";
 
 interface ChatBotProps {
   userId: string | undefined;
+  translations?: any;
 }
 
-export function ChatBot({ userId }: ChatBotProps) {
-  const {
-    messages,
-    isLoading,
-    isLoadingHistory,
-    error,
-    sendMessage,
-    startNewConversation,
-  } = useChatClient(userId);
+export function ChatBot({ userId, translations: t }: ChatBotProps) {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const [inputValue, setInputValue] = useState("");
 
-  const [input, setInput] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  // Create custom transport for FastAPI backend
+  const transport = useRef(
+    createFastApiChatTransport(`${API_URL}/api/chat`, userId)
+  );
+
+  // Use Vercel AI SDK's useChat hook with new API v6.0
+  const { messages, status, error, setMessages, sendMessage, stop } = useChat({
+    transport: transport.current,
+  });
 
   // Voice settings state
   const [voiceSettingsOpen, setVoiceSettingsOpen] = useState(false);
@@ -57,6 +60,9 @@ export function ChatBot({ userId }: ChatBotProps) {
     language: synthesisLanguage,
   });
 
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -66,49 +72,61 @@ export function ChatBot({ userId }: ChatBotProps) {
   useEffect(() => {
     if (synthesisEnabled && messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
-      if (lastMessage.role === "assistant" && lastMessage.content) {
-        speak(lastMessage.content);
+      if (lastMessage.role === "assistant") {
+        const content = getTextFromMessage(lastMessage);
+        if (content) {
+          speak(content);
+        }
       }
     }
   }, [messages, synthesisEnabled, speak]);
 
-  // Auto-focus input
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
-  const handleSend = async () => {
-    const trimmed = input.trim();
-    if (!trimmed || isLoading) return;
-
-    setInput("");
-    await sendMessage(trimmed);
-
-    // Stop any ongoing speech when user sends new message
-    if (isSpeaking) {
-      speak(""); // This will cancel via the cancel call in useSpeechSynthesis
-    }
-
-    inputRef.current?.focus();
+  // Get text content from a message's parts
+  const getTextFromMessage = (message: UIMessage): string => {
+    return message.parts
+      .filter((part): part is { type: "text"; text: string } => part.type === "text")
+      .map((part) => part.text)
+      .join("");
   };
 
   // Handle voice transcript
   const handleVoiceTranscript = (transcript: string) => {
-    setInput(transcript);
-    // Optionally auto-send after a short delay
-    setTimeout(() => {
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
-    }, 100);
+    setInputValue(transcript);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+  // Handle new conversation
+  const handleNewConversation = () => {
+    setMessages([]);
+    transport.current.setConversationId(null);
+    // Clear localStorage
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("chat_conversation_id");
+      } catch {
+        // Ignore localStorage errors
+      }
     }
   };
+
+  // Handle form submit
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    // Stop any ongoing speech when user sends new message
+    if (isSpeaking) {
+      speak(""); // Cancel via the cancel call in useSpeechSynthesis
+    }
+
+    if (!inputValue.trim() || status === "streaming") return;
+
+    // Send message using the new AI SDK API v6.0
+    // sendMessage accepts an object with text property
+    await sendMessage({ text: inputValue });
+    setInputValue("");
+  };
+
+  const isLoading = status === "streaming" || status === "submitted";
+  const hasError = status === "error";
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] max-w-4xl mx-auto">
@@ -151,7 +169,7 @@ export function ChatBot({ userId }: ChatBotProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={startNewConversation}
+            onClick={handleNewConversation}
             className="gap-1"
           >
             <Plus className="h-3.5 w-3.5" />
@@ -162,16 +180,11 @@ export function ChatBot({ userId }: ChatBotProps) {
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {isLoadingHistory ? (
-          <div className="flex items-center justify-center h-full">
-            <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
-            <span className="ml-2 text-neutral-500">Loading conversation...</span>
-          </div>
-        ) : messages.length === 0 ? (
+        {messages.length === 0 ? (
           <WelcomeMessage />
         ) : (
-          messages.map((msg, idx) => (
-            <MessageBubble key={msg.id || idx} message={msg} />
+          messages.map((message, idx) => (
+            <MessageBubble key={message.id || idx} message={message} />
           ))
         )}
 
@@ -189,10 +202,10 @@ export function ChatBot({ userId }: ChatBotProps) {
           </div>
         )}
 
-        {error && (
+        {hasError && error && (
           <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 text-sm">
             <AlertCircle className="h-4 w-4 shrink-0" />
-            {error}
+            {error.message || "Failed to send message"}
           </div>
         )}
 
@@ -201,12 +214,10 @@ export function ChatBot({ userId }: ChatBotProps) {
 
       {/* Input Area */}
       <div className="border-t border-neutral-200 dark:border-neutral-800 px-4 py-3">
-        <div className="flex items-end gap-2">
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
+        <form onSubmit={onSubmit} className="flex items-end gap-2" ref={formRef}>
+          <input
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
             placeholder="Type a message or use voice input... (e.g., 'Add a task to buy groceries')"
             className={cn(
               "flex-1 resize-none rounded-xl border border-neutral-300 dark:border-neutral-700",
@@ -215,7 +226,6 @@ export function ChatBot({ userId }: ChatBotProps) {
               "focus:outline-none focus:ring-2 focus:ring-blue-500/50",
               "min-h-[42px] max-h-[120px]"
             )}
-            rows={1}
             disabled={isLoading || !userId}
           />
 
@@ -228,16 +238,16 @@ export function ChatBot({ userId }: ChatBotProps) {
           />
 
           <Button
-            onClick={handleSend}
-            disabled={!input.trim() || isLoading || !userId}
+            type="submit"
+            disabled={!inputValue.trim() || isLoading || !userId}
             className="h-[42px] w-[42px] shrink-0 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md hover:shadow-lg"
             size="icon"
           >
             <Send className="h-4 w-4" />
           </Button>
-        </div>
+        </form>
         <p className="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500 flex items-center justify-between">
-          <span>Press Enter to send, Shift+Enter for new line</span>
+          <span>Press Enter to send</span>
           {synthesisEnabled && (
             <span className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
               <Volume2 className="h-3 w-3" />
@@ -287,7 +297,7 @@ function WelcomeMessage() {
             key={suggestion}
             className="text-left text-sm px-4 py-2.5 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700"
           >
-            &quot;{suggestion}&quot;
+            "{suggestion}"
           </div>
         ))}
       </div>
@@ -295,8 +305,14 @@ function WelcomeMessage() {
   );
 }
 
-function MessageBubble({ message }: { message: ChatMessage }) {
+function MessageBubble({ message }: { message: UIMessage }) {
   const isUser = message.role === "user";
+
+  // Extract text content from message parts
+  const contentText = message.parts
+    .filter((part): part is { type: "text"; text: string } => part.type === "text")
+    .map((part) => part.text)
+    .join("");
 
   return (
     <div className={cn("flex items-start gap-3", isUser && "flex-row-reverse")}>
@@ -322,20 +338,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             : "rounded-tl-sm bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
         )}
       >
-        <p className="whitespace-pre-wrap">{message.content}</p>
-        {message.tool_calls && message.tool_calls.length > 0 && (
-          <div className="mt-2 pt-2 border-t border-neutral-200/30 dark:border-neutral-700/30">
-            <p className="text-xs opacity-70 mb-1">Tools used:</p>
-            {message.tool_calls.map((tc, i) => (
-              <span
-                key={i}
-                className="inline-block text-xs px-2 py-0.5 rounded-full bg-white/20 dark:bg-black/20 mr-1 mb-1"
-              >
-                {tc.name}
-              </span>
-            ))}
-          </div>
-        )}
+        <p className="whitespace-pre-wrap">{contentText}</p>
       </div>
     </div>
   );

@@ -12,18 +12,236 @@ import json
 import logging
 import re
 import uuid
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Optional
 
-from openai import OpenAI
+from agents import Agent, RunContextWrapper, Runner, function_tool
 from sqlmodel import Session
 
 from src.models.conversation import Message
-from src.services.mcp_tools import MCPToolsService, MCP_TOOLS
+from src.services.mcp_tools import MCPToolsService
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
+
+# ============================================================================
+# CONTEXT DATA CLASS
+# ============================================================================
+
+@dataclass
+class AgentContext:
+    """Context object passed to agent tools containing database session and user info."""
+    session: Session
+    user_id: str
+    recent_tasks: list[dict]
+    last_list_result: Optional[list]
+    pending_confirmation: Optional[dict]
+
+
+# ============================================================================
+# FUNCTION TOOLS (OpenAI Agents SDK)
+# ============================================================================
+
+@function_tool
+async def add_task(
+    ctx: RunContextWrapper[AgentContext],
+    title: str,
+    description: Optional[str] = None,
+) -> str:
+    """
+    Add a new task for the user.
+
+    Args:
+        title: Task title (required, 1-200 characters)
+        description: Optional task description (max 2000 characters)
+    """
+    mcp_service = MCPToolsService(ctx.context.session)
+    user_id_uuid = uuid.UUID(ctx.context.user_id)
+
+    result = mcp_service.add_task(
+        user_id=user_id_uuid,
+        title=title,
+        description=description,
+    )
+
+    if result["success"]:
+        task = result["task"]
+        return json.dumps({
+            "success": True,
+            "message": f"I've created a task: '{task['title']}'. Would you like to add any details like a description?",
+            "task": task,
+        })
+    else:
+        return json.dumps({
+            "success": False,
+            "error": result.get("error", "Failed to create task"),
+        })
+
+
+@function_tool
+async def list_tasks(
+    ctx: RunContextWrapper[AgentContext],
+    is_complete: Optional[bool] = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> str:
+    """
+    List all tasks for a user with optional filtering.
+
+    Args:
+        is_complete: Optional filter: true for completed tasks, false for incomplete, null for all
+        limit: Maximum number of tasks to return (1-100, default 50)
+        offset: Number of tasks to skip (default 0)
+    """
+    mcp_service = MCPToolsService(ctx.context.session)
+    user_id_uuid = uuid.UUID(ctx.context.user_id)
+
+    result = mcp_service.list_tasks(
+        user_id=user_id_uuid,
+        is_complete=is_complete,
+        limit=limit,
+        offset=offset,
+    )
+
+    if result["success"]:
+        tasks = result["tasks"]
+        total = result["total"]
+
+        if not tasks:
+            return json.dumps({
+                "success": True,
+                "message": "You don't have any tasks yet. Would you like to create one?",
+                "tasks": [],
+                "total": 0,
+            })
+
+        return json.dumps({
+            "success": True,
+            "message": f"You have {total} task{'s' if total != 1 else ''}. Would you like to complete, update, or delete any of these?",
+            "tasks": tasks,
+            "total": total,
+        })
+    else:
+        return json.dumps({
+            "success": False,
+            "error": result.get("error", "Failed to list tasks"),
+        })
+
+
+@function_tool
+async def complete_task(
+    ctx: RunContextWrapper[AgentContext],
+    task_id: str,
+) -> str:
+    """
+    Mark a task as complete.
+
+    Args:
+        task_id: UUID of the task to mark complete
+    """
+    mcp_service = MCPToolsService(ctx.context.session)
+    user_id_uuid = uuid.UUID(ctx.context.user_id)
+    task_id_uuid = uuid.UUID(task_id)
+
+    result = mcp_service.complete_task(
+        user_id=user_id_uuid,
+        task_id=task_id_uuid,
+    )
+
+    if result["success"]:
+        task = result["task"]
+        return json.dumps({
+            "success": True,
+            "message": f"Done! '{task['title']}' is now marked complete.",
+            "task": task,
+        })
+    else:
+        return json.dumps({
+            "success": False,
+            "error": result.get("error", "Failed to complete task"),
+        })
+
+
+@function_tool
+async def delete_task(
+    ctx: RunContextWrapper[AgentContext],
+    task_id: str,
+) -> str:
+    """
+    Delete a task.
+
+    Args:
+        task_id: UUID of the task to delete
+    """
+    mcp_service = MCPToolsService(ctx.context.session)
+    user_id_uuid = uuid.UUID(ctx.context.user_id)
+    task_id_uuid = uuid.UUID(task_id)
+
+    result = mcp_service.delete_task(
+        user_id=user_id_uuid,
+        task_id=task_id_uuid,
+    )
+
+    if result["success"]:
+        return json.dumps({
+            "success": True,
+            "message": result.get("message", "Task deleted successfully"),
+        })
+    else:
+        return json.dumps({
+            "success": False,
+            "error": result.get("error", "Failed to delete task"),
+        })
+
+
+@function_tool
+async def update_task(
+    ctx: RunContextWrapper[AgentContext],
+    task_id: str,
+    title: Optional[str] = None,
+    description: Optional[str] = None,
+    is_complete: Optional[bool] = None,
+) -> str:
+    """
+    Update task details (title, description, or completion status).
+
+    Args:
+        task_id: UUID of the task to update
+        title: Optional new title (1-200 characters)
+        description: Optional new description (max 2000 characters)
+        is_complete: Optional new completion status
+    """
+    mcp_service = MCPToolsService(ctx.context.session)
+    user_id_uuid = uuid.UUID(ctx.context.user_id)
+    task_id_uuid = uuid.UUID(task_id)
+
+    result = mcp_service.update_task(
+        user_id=user_id_uuid,
+        task_id=task_id_uuid,
+        title=title,
+        description=description,
+        is_complete=is_complete,
+    )
+
+    if result["success"]:
+        task = result["task"]
+        return json.dumps({
+            "success": True,
+            "message": f"Updated! Task '{task['title']}' has been modified.",
+            "task": task,
+        })
+    else:
+        return json.dumps({
+            "success": False,
+            "error": result.get("error", "Failed to update task"),
+        })
+
+
+# ============================================================================
+# INTENT DETECTION AND PARAMETER EXTRACTION
+# ============================================================================
 
 class IntentDetector:
     """
@@ -181,6 +399,10 @@ class ParameterExtractor:
         return None
 
 
+# ============================================================================
+# PRONOUN RESOLUTION
+# ============================================================================
+
 class PronounResolver:
     """
     Resolve pronouns (it, that, this) to actual tasks from conversation context.
@@ -188,7 +410,7 @@ class PronounResolver:
     Enables natural multi-turn conversations like:
     - User: "Create 'Buy milk'"
     - AI: "Task created"
-    - User: "Mark it complete"  ← "it" refers to 'Buy milk' task
+    - User: "Mark it complete"  <- "it" refers to 'Buy milk' task
     """
 
     @staticmethod
@@ -226,6 +448,10 @@ class PronounResolver:
 
         return None
 
+
+# ============================================================================
+# CONFIRMATION FLOW
+# ============================================================================
 
 class ConfirmationFlow:
     """
@@ -288,6 +514,10 @@ class ConfirmationFlow:
         return None
 
 
+# ============================================================================
+# ERROR HANDLER
+# ============================================================================
+
 class ErrorHandler:
     """
     Convert tool errors to user-friendly messages.
@@ -346,14 +576,12 @@ class ErrorHandler:
     @classmethod
     def handle_tool_error(
         cls,
-        tool_name: str,
         tool_result: dict[str, Any]
     ) -> str:
         """
         Convert tool error to user-friendly message.
 
         Args:
-            tool_name: Name of tool that failed
             tool_result: Result dict from tool execution
 
         Returns:
@@ -361,10 +589,9 @@ class ErrorHandler:
         """
         # Log full error for debugging
         logger.error(
-            f"Tool error: {tool_name}",
+            f"Tool execution failed",
             extra={
                 "timestamp": datetime.utcnow().isoformat(),
-                "tool": tool_name,
                 "result": tool_result,
             },
         )
@@ -421,27 +648,10 @@ class ErrorHandler:
 
         return "generic"
 
-    @classmethod
-    def suggest_recovery(cls, error_type: str, context: dict) -> str:
-        """
-        Suggest next steps to user after error.
 
-        Args:
-            error_type: Type of error that occurred
-            context: Conversation context
-
-        Returns:
-            Suggestion message
-        """
-        if error_type == "NOT_FOUND":
-            return "Would you like to see all your pending tasks so you can choose one?"
-        elif error_type == "VALIDATION_ERROR":
-            return "Try again with a shorter title (under 200 characters)."
-        elif error_type == "SERVER_ERROR":
-            return "Please try again in a moment, or let me know how else I can help."
-
-        return "Is there anything else I can help you with?"
-
+# ============================================================================
+# AGENT SERVICE
+# ============================================================================
 
 class AgentService:
     """
@@ -459,9 +669,8 @@ class AgentService:
     """
 
     # Agent configuration
-    MODEL = "gpt-4-turbo"
+    MODEL = "gpt-4o"
     TEMPERATURE = 0.7
-    MAX_TOKENS = 4096
 
     # System prompt for the agent
     SYSTEM_PROMPT = """You are a helpful AI assistant that helps users manage their todo tasks through natural conversation.
@@ -485,32 +694,35 @@ Guidelines:
 
 Example interactions:
 - User: "Add a task to buy groceries"
-  → Recognize as add_task intent
-  → Extract title: "Buy groceries"
+  → Use add_task tool with title: "Buy groceries"
   → Confirm task creation
 
 - User: "Delete my oldest task"
-  → First fetch the task to be deleted
+  → First use list_tasks to find the task
   → Ask for explicit confirmation with task name
   → Only after confirmation, invoke delete_task tool
 
 - User: "Mark it complete"
   → Remember context from earlier messages
   → Identify which task "it" refers to
-  → Confirm completion
+  → Use complete_task tool
 """
 
-    def __init__(self, session: Session, openai_api_key: Optional[str] = None):
+    def __init__(self, session: Session):
         """
         Initialize Agent Service.
 
         Args:
             session: SQLModel database session
-            openai_api_key: OpenAI API key (reads from OPENAI_API_KEY env var if not provided)
         """
         self.session = session
-        self.client = OpenAI(api_key=openai_api_key)
-        self.mcp_service = MCPToolsService(session)
+
+        # Create the agent with tools
+        self.agent = Agent[AgentContext](
+            name="TodoAssistant",
+            instructions=self.SYSTEM_PROMPT,
+            tools=[add_task, list_tasks, complete_task, delete_task, update_task],
+        )
 
         # Conversation context state
         self.recent_tasks: list[dict] = []  # Recently mentioned tasks
@@ -528,8 +740,8 @@ Example interactions:
             "status": "initialized",
             "model": self.MODEL,
             "temperature": self.TEMPERATURE,
-            "tools_count": len(MCP_TOOLS),
-            "tools": [tool["function"]["name"] for tool in MCP_TOOLS],
+            "tools_count": len(self.agent.tools),
+            "tools": [tool.name for tool in self.agent.tools],
         }
 
     def process_user_message(
@@ -542,7 +754,7 @@ Example interactions:
         Process a user message through the AI agent with intent detection.
 
         Args:
-            user_id: UUID of the user
+            user_id: UUID of the user (string from Better Auth)
             user_message: The user's message text
             conversation_history: List of previous messages with role and content
 
@@ -560,16 +772,14 @@ Example interactions:
             # Detect intent
             intent = IntentDetector.detect_intent(user_message)
 
-            # Check if confirmation required
+            # Check if confirmation required (for delete operations)
             if ConfirmationFlow.requires_confirmation(intent):
-                return await self._handle_destructive_operation(
+                return self._handle_destructive_operation(
                     user_id, user_message, intent
                 )
 
-            # Process normal intent
-            return self._process_intent(
-                user_id, user_message, conversation_history, intent
-            )
+            # Process normal intent using OpenAI Agents SDK
+            return self._process_with_agent(user_id, user_message)
 
         except Exception as e:
             logger.error(f"Agent processing failed: {e}", exc_info=True)
@@ -596,20 +806,28 @@ Example interactions:
         for msg in conversation_history[-5:]:  # Last 5 messages
             if msg.get("tool_calls"):
                 for tool_call in msg["tool_calls"]:
-                    if tool_call.get("result") and tool_call["result"].get("success"):
+                    # Parse the result if it's a string
+                    result_data = tool_call.get("result", {})
+                    if isinstance(result_data, str):
+                        try:
+                            result_data = json.loads(result_data)
+                        except json.JSONDecodeError:
+                            continue
+
+                    if result_data.get("success"):
                         # Extract task info from successful tool calls
-                        if "task" in tool_call["result"]:
-                            task = tool_call["result"]["task"]
+                        if "task" in result_data:
+                            task = result_data["task"]
                             self.recent_tasks.append({
                                 "task_id": task.get("id"),
                                 "title": task.get("title"),
                             })
 
                         # Store list results for ordinal reference
-                        if "tasks" in tool_call["result"]:
-                            self.last_list_result = tool_call["result"]["tasks"]
+                        if "tasks" in result_data:
+                            self.last_list_result = result_data["tasks"]
 
-    async def _handle_destructive_operation(
+    def _handle_destructive_operation(
         self,
         user_id: str,
         user_message: str,
@@ -626,53 +844,25 @@ Example interactions:
         Returns:
             Response requesting confirmation or executing deletion
         """
-        # Try to identify task first
-        task_ref = ParameterExtractor.extract_task_reference(user_message)
+        # Use the agent to identify the task
+        context = AgentContext(
+            session=self.session,
+            user_id=user_id,
+            recent_tasks=self.recent_tasks,
+            last_list_result=self.last_list_result,
+            pending_confirmation=None,
+        )
 
-        if task_ref and task_ref.startswith("task_"):
-            # Direct task reference - get task details
-            try:
-                # Extract task number
-                task_num = int(task_ref.split("_")[1])
-                # List tasks to find the one at that position
-                list_result = self.mcp_service.list_tasks(
-                    user_id=user_id,
-                    limit=task_num,
-                    offset=0
-                )
+        # Add context hint for pronoun resolution
+        enhanced_message = user_message
+        if ParameterExtractor.contains_pronoun(user_message):
+            context_hint = f"\n\nContext - Recent tasks: {json.dumps(self.recent_tasks, indent=2)}"
+            enhanced_message += context_hint
 
-                if list_result["success"] and len(list_result["tasks"]) >= task_num:
-                    task = list_result["tasks"][task_num - 1]
-                    task_id = task["id"]
-                    task_title = task["title"]
-                else:
-                    return {
-                        "success": True,
-                        "assistant_message": (
-                            f"I couldn't find task {task_num}. "
-                            "Would you like to see all your tasks?"
-                        ),
-                        "tool_calls": [],
-                    }
-            except Exception:
-                return {
-                    "success": True,
-                    "assistant_message": (
-                        "I'm not sure which task you mean. "
-                        "Would you like to see all your tasks?"
-                    ),
-                    "tool_calls": [],
-                }
-        else:
-            # Use LLM to identify task
-            response = self.client.chat.completions.create(
-                model=self.MODEL,
-                temperature=self.TEMPERATURE,
-                messages=[
-                    {"role": "system", "content": self.SYSTEM_PROMPT},
-                    {
-                        "role": "user",
-                        "content": f"""User wants to delete a task. Their message: "{user_message}"
+        # Run agent to identify task and get confirmation
+        result = Runner.run_sync(
+            starting_agent=self.agent,
+            input=f"""User wants to delete a task. Their message: "{user_message}"
 
 To help them, I need to:
 1. Identify which task they want to delete
@@ -681,61 +871,24 @@ To help them, I need to:
 Available context - recent tasks: {json.dumps(self.recent_tasks, indent=2)}
 Last task list: {json.dumps(self.last_list_result, indent=2) if self.last_list_result else "None"}
 
-Respond with JSON:
-{{
-    "task_id": "uuid or null",
-    "task_title": "title or null",
-    "clarification": "message if task cannot be identified"
-}}"""
-                    },
-                ],
-            )
+First, use list_tasks to see their tasks. Then tell me which task they want to delete by saying "The user wants to delete [task title]".""",
+            context=context,
+        )
 
-            # Parse LLM response
-            try:
-                content = response.choices[0].message.content or "{}"
-                llm_result = json.loads(content)
+        response_content = result.final_output
 
-                if llm_result.get("clarification"):
-                    return {
-                        "success": True,
-                        "assistant_message": llm_result["clarification"],
-                        "tool_calls": [],
-                    }
-
-                task_id = llm_result.get("task_id")
-                task_title = llm_result.get("task_title")
-
-                if not task_id or not task_title:
-                    return {
-                        "success": True,
-                        "assistant_message": (
-                            "I'm not sure which task you mean. "
-                            "Would you like to see all your tasks?"
-                        ),
-                        "tool_calls": [],
-                    }
-            except Exception:
-                return {
-                    "success": True,
-                    "assistant_message": (
-                        "I'm not sure which task you mean. "
-                        "Could you be more specific?"
-                    ),
-                    "tool_calls": [],
-                }
-
-        # Store pending confirmation
+        # Try to extract task info from the response
+        # This is a simplified approach - the agent should identify the task
+        # For now, we'll return a confirmation request
         self.pending_confirmation = {
             "tool": "delete_task",
-            "task_id": task_id,
-            "task_title": task_title,
+            "user_message": user_message,
+            "context": context,
         }
 
-        # Return confirmation message
         return {
             "success": True,
-            "assistant_message": ConfirmationFlow.format_confirmation_message(task_title),
+            "assistant_message": response_content,
             "tool_calls": [],
             "requires_confirmation": True,
         }
@@ -784,281 +937,99 @@ Respond with JSON:
                 "tool_calls": [],
             }
 
-        # User confirmed - execute pending operation
+        # User confirmed - execute pending operation using agent
         pending = self.pending_confirmation
         self.pending_confirmation = None
 
-        # Execute the tool
-        tool_result = self._execute_tool_call(
+        # Run agent with confirmation
+        context = AgentContext(
+            session=self.session,
             user_id=user_id,
-            tool_name=pending["tool"],
-            tool_args={"task_id": pending["task_id"]},
+            recent_tasks=self.recent_tasks,
+            last_list_result=self.last_list_result,
+            pending_confirmation=None,
         )
 
-        # Generate response
-        if tool_result["success"]:
-            return {
-                "success": True,
-                "assistant_message": (
-                    f"Task deleted. You have {self._count_pending_tasks(user_id)} "
-                    "pending tasks left."
-                ),
-                "tool_calls": [
-                    {
-                        "id": str(uuid.uuid4()),
-                        "name": pending["tool"],
-                        "result": tool_result,
-                    }
-                ],
-            }
-        else:
-            error_msg = ErrorHandler.handle_tool_error(pending["tool"], tool_result)
-            return {
-                "success": True,
-                "assistant_message": error_msg,
-                "tool_calls": [],
-            }
+        result = Runner.run_sync(
+            starting_agent=self.agent,
+            input=f"The user has confirmed they want to delete a task. Their original message was: '{pending['user_message']}'. Please proceed with deleting the task they identified.",
+            context=context,
+        )
 
-    def _process_intent(
+        return {
+            "success": True,
+            "assistant_message": result.final_output,
+            "tool_calls": [],
+        }
+
+    def _process_with_agent(
         self,
         user_id: str,
         user_message: str,
-        conversation_history: list[dict[str, str]],
-        intent: str
     ) -> dict[str, Any]:
         """
-        Process intent and generate response.
+        Process user message using OpenAI Agents SDK.
 
         Args:
             user_id: UUID of the user
             user_message: User's message
-            conversation_history: Previous messages
-            intent: Detected intent
 
         Returns:
             Agent response with tool calls
         """
-        # Build messages for OpenAI API
-        messages = []
-
-        # Add system prompt
-        messages.append({"role": "system", "content": self.SYSTEM_PROMPT})
-
-        # Add conversation history (last 10 messages for context)
-        for msg in conversation_history[-10:]:
-            messages.append(msg)
-
-        # Add current user message
-        messages.append({"role": "user", "content": user_message})
-
-        # Add context hint for pronoun resolution
-        if ParameterExtractor.contains_pronoun(user_message):
-            context_hint = f"\n\nContext - Recent tasks: {json.dumps(self.recent_tasks, indent=2)}"
-            messages[-1]["content"] += context_hint
-
-        # Call OpenAI API with tools
-        response = self.client.chat.completions.create(
-            model=self.MODEL,
-            temperature=self.TEMPERATURE,
-            messages=messages,
-            tools=MCP_TOOLS,
-            tool_choice="auto",
+        # Create context for this run
+        context = AgentContext(
+            session=self.session,
+            user_id=user_id,
+            recent_tasks=self.recent_tasks,
+            last_list_result=self.last_list_result,
+            pending_confirmation=self.pending_confirmation,
         )
 
-        # Extract response content and tool calls
-        assistant_message = response.choices[0].message
-        tool_calls = assistant_message.tool_calls
-        assistant_content = assistant_message.content or ""
+        # Add context hint for pronoun resolution
+        enhanced_message = user_message
+        if ParameterExtractor.contains_pronoun(user_message):
+            context_hint = f"\n\nContext - Recent tasks: {json.dumps(self.recent_tasks, indent=2)}"
+            enhanced_message += context_hint
 
-        # Process tool calls if any
-        tool_results = []
-        if tool_calls:
-            for tool_call in tool_calls:
-                tool_result = self._execute_tool_call(
-                    user_id=user_id,
-                    tool_name=tool_call.function.name,
-                    tool_args=json.loads(tool_call.function.arguments),
-                )
+        # Run the agent synchronously
+        result = Runner.run_sync(
+            starting_agent=self.agent,
+            input=enhanced_message,
+            context=context,
+        )
 
-                # Handle tool errors
-                if not tool_result.get("success"):
-                    error_msg = ErrorHandler.handle_tool_error(
-                        tool_call.function.name,
-                        tool_result
-                    )
-                    return {
-                        "success": True,
-                        "assistant_message": error_msg,
-                        "tool_calls": [],
-                    }
-
-                # Update context with successful tool result
-                if tool_result.get("success") and "task" in tool_result:
-                    self.recent_tasks.append({
-                        "task_id": tool_result["task"]["id"],
-                        "title": tool_result["task"]["title"],
-                    })
-                elif tool_result.get("success") and "tasks" in tool_result:
-                    self.last_list_result = tool_result["tasks"]
-
-                tool_results.append({
-                    "id": tool_call.id,
-                    "name": tool_call.function.name,
-                    "result": tool_result,
-                })
-
-        # Enhance response with context
-        if not assistant_content and tool_results:
-            assistant_content = self._generate_response_from_tool_results(tool_results)
+        # Extract tool calls from the result
+        tool_calls = []
+        if hasattr(result, 'to_input_list'):
+            # Convert result to input list to extract tool calls
+            for item in result.to_input_list():
+                if hasattr(item, 'content') and hasattr(item.content, 'text'):
+                    # Check if this is a tool call response
+                    try:
+                        content_data = json.loads(item.content.text)
+                        if content_data.get("success"):
+                            tool_calls.append({
+                                "id": str(uuid.uuid4()),
+                                "name": "tool_call",
+                                "result": content_data,
+                            })
+                            # Update context with successful tool result
+                            if "task" in content_data:
+                                self.recent_tasks.append({
+                                    "task_id": content_data["task"]["id"],
+                                    "title": content_data["task"]["title"],
+                                })
+                            elif "tasks" in content_data:
+                                self.last_list_result = content_data["tasks"]
+                    except (json.JSONDecodeError, AttributeError):
+                        pass
 
         return {
             "success": True,
-            "assistant_message": assistant_content,
-            "tool_calls": tool_results,
-            "finish_reason": response.choices[0].finish_reason,
+            "assistant_message": result.final_output,
+            "tool_calls": tool_calls,
         }
-
-    def _execute_tool_call(
-        self,
-        user_id: str,
-        tool_name: str,
-        tool_args: dict[str, Any],
-    ) -> dict[str, Any]:
-        """
-        Execute a tool call and return the result.
-
-        Args:
-            user_id: String user ID (Better Auth format)
-            tool_name: Name of the tool to execute
-            tool_args: Arguments for the tool
-
-        Returns:
-            Dictionary with tool execution result
-        """
-        # Add user_id to arguments if needed (already a string from Better Auth)
-        if "user_id" not in tool_args:
-            tool_args["user_id"] = user_id
-
-        # Route to appropriate tool
-        # Note: MCP tools expect UUID types, convert from string
-        user_id_uuid = uuid.UUID(tool_args["user_id"]) if isinstance(tool_args.get("user_id"), str) else tool_args["user_id"]
-
-        if tool_name == "add_task":
-            return self.mcp_service.add_task(
-                user_id=user_id_uuid,
-                title=tool_args.get("title"),
-                description=tool_args.get("description"),
-            )
-
-        elif tool_name == "list_tasks":
-            return self.mcp_service.list_tasks(
-                user_id=user_id_uuid,
-                is_complete=tool_args.get("is_complete"),
-                limit=tool_args.get("limit", 50),
-                offset=tool_args.get("offset", 0),
-            )
-
-        elif tool_name == "complete_task":
-            return self.mcp_service.complete_task(
-                user_id=user_id_uuid,
-                task_id=uuid.UUID(tool_args.get("task_id")),
-            )
-
-        elif tool_name == "delete_task":
-            return self.mcp_service.delete_task(
-                user_id=user_id_uuid,
-                task_id=uuid.UUID(tool_args.get("task_id")),
-            )
-
-        elif tool_name == "update_task":
-            return self.mcp_service.update_task(
-                user_id=user_id_uuid,
-                task_id=uuid.UUID(tool_args.get("task_id")),
-                title=tool_args.get("title"),
-                description=tool_args.get("description"),
-                is_complete=tool_args.get("is_complete"),
-            )
-
-        else:
-            return {
-                "success": False,
-                "error": f"Unknown tool: {tool_name}",
-            }
-
-    def _generate_response_from_tool_results(
-        self,
-        tool_results: list[dict]
-    ) -> str:
-        """
-        Generate conversational response from tool results.
-
-        Args:
-            tool_results: List of tool execution results
-
-        Returns:
-            Conversational response message
-        """
-        if not tool_results:
-            return "Is there anything else I can help with?"
-
-        result = tool_results[0]
-        tool_name = result["name"]
-        tool_result = result["result"]
-
-        if tool_name == "add_task" and tool_result.get("success"):
-            task = tool_result["task"]
-            return (
-                f"I've created a task: '{task['title']}'. "
-                "Would you like to add any details like a description?"
-            )
-
-        elif tool_name == "list_tasks" and tool_result.get("success"):
-            tasks = tool_result["tasks"]
-            if not tasks:
-                return "You don't have any tasks yet. Would you like to create one?"
-
-            task_list = "\n".join([
-                f"{i+1}. {task['title']}"
-                for i, task in enumerate(tasks[:10])
-            ])
-            total = tool_result["total"]
-            return (
-                f"You have {total} task{'s' if total != 1 else ''}:\n{task_list}\n"
-                "Would you like to complete, update, or delete any of these?"
-            )
-
-        elif tool_name == "complete_task" and tool_result.get("success"):
-            task = tool_result["task"]
-            pending = self._count_pending_tasks(uuid.UUID(task["id"].replace("'", "")))
-            return (
-                f"Done! '{task['title']}' is now marked complete. "
-                f"You have {pending} pending task{'s' if pending != 1 else ''} left."
-            )
-
-        elif tool_name == "update_task" and tool_result.get("success"):
-            task = tool_result["task"]
-            return f"Updated! Task '{task['title']}' has been modified."
-
-        return "Operation completed. Is there anything else I can help with?"
-
-    def _count_pending_tasks(self, user_id: str) -> int:
-        """
-        Count pending tasks for user.
-
-        Args:
-            user_id: String user ID (Better Auth format)
-
-        Returns:
-            Number of pending tasks
-        """
-        # Convert to UUID for MCP tools
-        user_id_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
-        result = self.mcp_service.list_tasks(
-            user_id=user_id_uuid,
-            is_complete=False,
-            limit=1000,
-        )
-        return result.get("total", 0) if result.get("success") else 0
 
     def format_tool_calls_for_storage(
         self,
@@ -1083,7 +1054,7 @@ Respond with JSON:
                     "type": "function",
                     "function": {
                         "name": tc["name"],
-                        "result": json.dumps(tc["result"]),
+                        "result": json.dumps(tc["result"]) if isinstance(tc["result"], dict) else tc["result"],
                     },
                 }
                 for tc in tool_calls

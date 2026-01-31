@@ -27,7 +27,7 @@ export function SearchBar({
   disabled = false,
 }: SearchBarProps) {
   const [localValue, setLocalValue] = useState(value);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // Update local value when prop changes
   useEffect(() => {
@@ -53,7 +53,8 @@ export function SearchBar({
 
   const handleClear = useCallback(() => {
     setLocalValue("");
-  }, []);
+    onChange("");
+  }, [onChange]);
 
   return (
     <div className="relative">

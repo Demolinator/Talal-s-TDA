@@ -102,7 +102,7 @@ export function TaskForm({
       await onSubmit({
         title: data.title.trim(),
         description: data.description?.trim() || null,
-        priority: data.priority || 2,
+        priority: (data.priority as Priority) || 2,
         due_date: data.due_date ? new Date(data.due_date).toISOString() : null,
         tag_ids: selectedTagIds,
       });
@@ -170,7 +170,7 @@ export function TaskForm({
         <Label>Priority</Label>
         <PrioritySelector
           value={priority || 2}
-          onChange={(p) => setValue("priority", p)}
+          onChange={(p: Priority) => setValue("priority", p as number)}
           disabled={isLoading || isSubmitting}
         />
       </div>

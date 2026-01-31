@@ -1,23 +1,12 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import { ThemeProvider } from "@/components/providers/theme-provider";
-import { Toaster } from "sonner";
+import { redirect } from 'next/navigation';
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
-
-export const metadata: Metadata = {
-  title: "TaskFlow - Organize Your Tasks Effortlessly",
-  description: "A modern, beautiful todo app with real-time sync, smart organization, and secure authentication.",
-};
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return children;
+/**
+ * Root Layout - Redirects to localized version
+ *
+ * This layout is only used for the root path redirect.
+ * All actual pages are under [locale] directory.
+ */
+export default function RootLayout() {
+  // Redirect to default locale
+  redirect('/en');
 }

@@ -246,7 +246,7 @@ export function FilterPanel({
                 onChange={(e) =>
                   setDueDateRange(
                     filters.due_date_before,
-                    e.targetValue ? `${e.target.value}T00:00:00Z` : undefined
+                    e.target.value ? `${e.target.value}T00:00:00Z` : undefined
                   )
                 }
               />

@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from fastapi import Depends, HTTPException
-from sqlmodel import Session, Select, select
+from sqlmodel import Session, select
 
 from src.db.session import get_session
 from src.models.priority import Priority

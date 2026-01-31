@@ -12,6 +12,7 @@ from pydantic import field_validator
 from sqlmodel import Field, Relationship, SQLModel
 
 from src.models.priority import Priority
+from src.models.task_tag import TaskTag
 
 
 class TaskBase(SQLModel):
@@ -105,7 +106,7 @@ class Task(TaskBase, table=True):
     # Many-to-many relationship with tags
     tags: List["Tag"] = Relationship(
         back_populates="tasks",
-        link_model="TaskTag",
+        link_model=TaskTag,
     )
 
     class Config:

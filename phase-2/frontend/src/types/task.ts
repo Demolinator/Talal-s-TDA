@@ -7,6 +7,9 @@
 
 import type { Tag } from "./tag";
 
+// Re-export Tag for convenience
+export type { Tag };
+
 /**
  * Priority levels (matches backend Priority enum)
  */
