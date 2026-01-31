@@ -11,6 +11,9 @@ const nextConfig: NextConfig = {
     return `build-${Date.now()}-${Math.random().toString(36).substring(7)}`;
   },
 
+  // Standalone output for Docker deployment
+  output: "standalone",
+
   experimental: {
     // Reduce hydration errors from browser extensions
     optimizePackageImports: ["@radix-ui/react-dialog", "@radix-ui/react-slot"],
