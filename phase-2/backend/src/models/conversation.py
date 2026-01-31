@@ -7,6 +7,7 @@ Represents chat conversations and individual messages for Phase III AI-powered t
 import uuid
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
 from sqlalchemy import JSON, Column, Index
 from sqlmodel import Field, Relationship, SQLModel
