@@ -59,7 +59,15 @@
     "pending": "Pending",
     "noTasksYet": "No tasks yet. Create one to get started!",
     "tasksCompleted": "completed",
-    "pendingTasks": "pending"
+    "pendingTasks": "pending",
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "network": "Network error. Please check your connection.",
+      "createFailed": "Failed to create task.",
+      "updateFailed": "Failed to update task.",
+      "deleteFailed": "Failed to delete task.",
+      "loadFailed": "Failed to load tasks."
+    }
   },
   "chat": {
     "title": "AI Assistant",

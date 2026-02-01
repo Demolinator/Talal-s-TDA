@@ -19,7 +19,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from sqlmodel import Session, select
 
-from src.api import auth, chat, health, tasks
+from src.api import auth, chat, health, tags, tasks
 from src.auth.dependencies import get_current_user
 from src.db.session import get_session
 from src.models.conversation import (
@@ -176,6 +176,10 @@ All endpoints are prefixed with `/api/`.
             "description": "Task management endpoints (CRUD operations, filtering, pagination)",
         },
         {
+            "name": "tags",
+            "description": "Tag management endpoints (CRUD operations, task-tag associations)",
+        },
+        {
             "name": "chat",
             "description": "Chat and conversation endpoints with AI agent integration",
         },
@@ -260,6 +264,7 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(tasks.router)
+app.include_router(tags.router)
 app.include_router(chat.router)
 
 
