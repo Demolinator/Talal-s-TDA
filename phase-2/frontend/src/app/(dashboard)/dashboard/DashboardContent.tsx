@@ -74,7 +74,7 @@ export default function DashboardPage({ translations: t }: DashboardContentProps
       const newTask = await createTask(data);
       setTasks((prev) => [newTask, ...prev]);
       setIsDialogOpen(false);
-      toast.success(t('tasks.taskCreated') || "Task created successfully");
+      toast.success(t('taskCreated') || "Task created successfully");
     } catch (error) {
       toast.error(t('errors.generic') || "Failed to create task");
       throw error;
@@ -91,7 +91,7 @@ export default function DashboardPage({ translations: t }: DashboardContentProps
       );
       setIsDialogOpen(false);
       setEditingTask(null);
-      toast.success(t('tasks.taskUpdated') || "Task updated successfully");
+      toast.success(t('taskUpdated') || "Task updated successfully");
     } catch (error) {
       toast.error(t('errors.generic') || "Failed to update task");
       throw error;
@@ -116,8 +116,8 @@ export default function DashboardPage({ translations: t }: DashboardContentProps
 
       toast.success(
         isComplete
-          ? (t('tasks.taskCompleted') || "Task completed!")
-          : (t('tasks.markIncomplete') || "Task marked as incomplete")
+          ? (t('taskCompleted') || "Task completed!")
+          : (t('markIncomplete') || "Task marked as incomplete")
       );
     } catch (error) {
       toast.error(t('errors.generic') || "Failed to update task");
@@ -130,7 +130,7 @@ export default function DashboardPage({ translations: t }: DashboardContentProps
     try {
       await deleteTask(taskId);
       setTasks((prev) => prev.filter((task) => task.id !== taskId));
-      toast.success(t('tasks.taskDeleted') || "Task deleted successfully");
+      toast.success(t('taskDeleted') || "Task deleted successfully");
     } catch (error) {
       toast.error(t('errors.generic') || "Failed to delete task");
       throw error;
@@ -167,12 +167,12 @@ export default function DashboardPage({ translations: t }: DashboardContentProps
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              {t('tasks.title')}
+              {t('title')}
             </h1>
             <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
               {taskCounts.all === 0
-                ? t('tasks.noTasksYet')
-                : `${taskCounts.pending} ${t('tasks.pendingTasks')}, ${taskCounts.completed} ${t('tasks.tasksCompleted')}`
+                ? t('noTasksYet')
+                : `${taskCounts.pending} ${t('pendingTasks')}, ${taskCounts.completed} ${t('tasksCompleted')}`
               }
             </p>
           </div>
@@ -182,7 +182,7 @@ export default function DashboardPage({ translations: t }: DashboardContentProps
             onClick={() => handleOpenDialog()}
             className="sm:hidden bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md hover:shadow-lg transition-all duration-200"
           >
-            {t('tasks.addTask')}
+            {t('addTask')}
           </Button>
         </div>
 
@@ -199,7 +199,7 @@ export default function DashboardPage({ translations: t }: DashboardContentProps
                   "bg-gradient-to-r from-blue-500 to-purple-600 text-white"
               )}
             >
-              {t(`tasks.${filterOption}`) || filterOption.charAt(0).toUpperCase() + filterOption.slice(1)}
+              {t(`${filterOption}`) || filterOption.charAt(0).toUpperCase() + filterOption.slice(1)}
               <Badge
                 variant={filter === filterOption ? "secondary" : "outline"}
                 className={cn(
@@ -233,12 +233,12 @@ export default function DashboardPage({ translations: t }: DashboardContentProps
         <DialogContent className="sm:max-w-[500px] bg-white/95 backdrop-blur-xl dark:bg-neutral-900/95">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              {editingTask ? t('tasks.editTask') : t('tasks.createNewTask')}
+              {editingTask ? t('editTask') : t('createNewTask')}
             </DialogTitle>
             <DialogDescription className="text-neutral-600 dark:text-neutral-400">
               {editingTask
-                ? t('tasks.updateTaskDetails')
-                : t('tasks.fillTaskDetails')}
+                ? t('updateTaskDetails')
+                : t('fillTaskDetails')}
             </DialogDescription>
           </DialogHeader>
           <TaskForm
