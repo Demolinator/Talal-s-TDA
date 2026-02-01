@@ -778,7 +778,7 @@ Example interactions:
             logger.error(f"Agent processing failed: {e}", exc_info=True)
             return {
                 "success": False,
-                "error": ErrorHandler.ERROR_MESSAGES["SERVER_ERROR"]["generic"],
+                "error": f"[DEBUG] {type(e).__name__}: {str(e)[:500]}",
             }
 
     def _update_context_from_history(
