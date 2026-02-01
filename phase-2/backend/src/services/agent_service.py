@@ -16,7 +16,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Optional
 
-from agents import Agent, RunContextWrapper, Runner, function_tool
+import os
+
+from agents import Agent, ModelProvider, OpenAIChatCompletionsModel, RunConfig, RunContextWrapper, Runner, function_tool
+from openai import AsyncOpenAI
 from sqlmodel import Session
 
 from src.models.conversation import Message
@@ -646,6 +649,23 @@ class ErrorHandler:
 # AGENT SERVICE
 # ============================================================================
 
+class GeminiModelProvider(ModelProvider):
+    """Custom model provider that routes to Google Gemini via its OpenAI-compatible API."""
+
+    def __init__(self):
+        api_key = os.environ.get("GEMINI_API_KEY", "")
+        self.client = AsyncOpenAI(
+            api_key=api_key,
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+        )
+
+    def get_model(self, model_name: str | None) -> OpenAIChatCompletionsModel:
+        return OpenAIChatCompletionsModel(
+            model=model_name or AgentService.MODEL,
+            openai_client=self.client,
+        )
+
+
 class AgentService:
     """
     Service for managing OpenAI Agent interactions with MCP tools.
@@ -661,8 +681,8 @@ class AgentService:
     Based on Phase III Agent Behavior Specification.
     """
 
-    # Agent configuration
-    MODEL = "gpt-4o"
+    # Agent configuration — uses Gemini via OpenAI-compatible API
+    MODEL = "gemini-2.0-flash"
     TEMPERATURE = 0.7
 
     # System prompt for the agent
@@ -715,6 +735,12 @@ Example interactions:
             name="TodoAssistant",
             instructions=self.SYSTEM_PROMPT,
             tools=[add_task, list_tasks, complete_task, delete_task, update_task],
+            model=self.MODEL,
+        )
+
+        # Configure Gemini as the model provider
+        self.run_config = RunConfig(
+            model_provider=GeminiModelProvider(),
         )
 
         # Conversation context state
@@ -778,7 +804,7 @@ Example interactions:
             logger.error(f"Agent processing failed: {e}", exc_info=True)
             return {
                 "success": False,
-                "error": f"[DEBUG] {type(e).__name__}: {str(e)[:500]}",
+                "error": ErrorHandler.ERROR_MESSAGES["SERVER_ERROR"]["generic"],
             }
 
     def _update_context_from_history(
@@ -866,6 +892,7 @@ Last task list: {json.dumps(self.last_list_result, indent=2) if self.last_list_r
 
 First, use list_tasks to see their tasks. Then tell me which task they want to delete by saying "The user wants to delete [task title]".""",
             context=context,
+            run_config=self.run_config,
         )
 
         response_content = result.final_output
@@ -947,6 +974,7 @@ First, use list_tasks to see their tasks. Then tell me which task they want to d
             starting_agent=self.agent,
             input=f"The user has confirmed they want to delete a task. Their original message was: '{pending['user_message']}'. Please proceed with deleting the task they identified.",
             context=context,
+            run_config=self.run_config,
         )
 
         return {
@@ -990,6 +1018,7 @@ First, use list_tasks to see their tasks. Then tell me which task they want to d
             starting_agent=self.agent,
             input=enhanced_message,
             context=context,
+            run_config=self.run_config,
         )
 
         # Extract tool calls from the result
