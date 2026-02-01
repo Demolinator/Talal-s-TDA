@@ -682,7 +682,7 @@ class AgentService:
     """
 
     # Agent configuration — uses Gemini via OpenAI-compatible API
-    MODEL = "gemini-2.0-flash"
+    MODEL = "gemini-2.5-flash-lite"
     TEMPERATURE = 0.7
 
     # System prompt for the agent
@@ -804,7 +804,7 @@ Example interactions:
             logger.error(f"Agent processing failed: {e}", exc_info=True)
             return {
                 "success": False,
-                "error": f"[DEBUG] {type(e).__name__}: {str(e)[:500]}",
+                "error": ErrorHandler.ERROR_MESSAGES["SERVER_ERROR"]["generic"],
             }
 
     def _update_context_from_history(
