@@ -25,7 +25,7 @@ class MCPToolsService:
 
     def add_task(
         self,
-        user_id: uuid.UUID,
+        user_id: str,
         title: str,
         description: Optional[str] = None,
     ) -> dict[str, Any]:
@@ -33,7 +33,7 @@ class MCPToolsService:
         Add a new task for the user.
 
         Args:
-            user_id: UUID of the task owner
+            user_id: ID of the task owner (Better Auth string ID)
             title: Task title (1-200 characters)
             description: Optional task description (max 2000 characters)
 
@@ -95,7 +95,7 @@ class MCPToolsService:
 
     def list_tasks(
         self,
-        user_id: uuid.UUID,
+        user_id: str,
         is_complete: Optional[bool] = None,
         limit: int = 50,
         offset: int = 0,
@@ -156,7 +156,7 @@ class MCPToolsService:
 
     def complete_task(
         self,
-        user_id: uuid.UUID,
+        user_id: str,
         task_id: uuid.UUID,
     ) -> dict[str, Any]:
         """
@@ -211,7 +211,7 @@ class MCPToolsService:
 
     def delete_task(
         self,
-        user_id: uuid.UUID,
+        user_id: str,
         task_id: uuid.UUID,
     ) -> dict[str, Any]:
         """
@@ -257,7 +257,7 @@ class MCPToolsService:
 
     def update_task(
         self,
-        user_id: uuid.UUID,
+        user_id: str,
         task_id: uuid.UUID,
         title: Optional[str] = None,
         description: Optional[str] = None,

@@ -28,10 +28,10 @@ class Conversation(SQLModel, table=True):
         primary_key=True,
         description="Unique conversation identifier (UUID v4)",
     )
-    user_id: uuid.UUID = Field(
+    user_id: str = Field(
         foreign_key="user.id",
         index=True,
-        description="Owner user ID (foreign key to user table)",
+        description="Owner user ID (Better Auth string ID, foreign key to user table)",
     )
     title: Optional[str] = Field(
         default=None,
@@ -65,7 +65,7 @@ class Conversation(SQLModel, table=True):
         json_schema_extra = {
             "example": {
                 "id": "750e8400-e29b-41d4-a716-446655440001",
-                "user_id": "550e8400-e29b-41d4-a716-446655440000",
+                "user_id": "p2776Z8HHiUv8GxFHnuso20ALer4HHWy",
                 "title": "Planning my week tasks",
                 "created_at": "2025-12-13T18:00:00Z",
                 "updated_at": "2025-12-13T18:00:00Z",
@@ -93,10 +93,10 @@ class Message(SQLModel, table=True):
         index=True,
         description="Parent conversation ID (foreign key)",
     )
-    user_id: uuid.UUID = Field(
+    user_id: str = Field(
         foreign_key="user.id",
         index=True,
-        description="User ID for audit trail (foreign key)",
+        description="User ID for audit trail (Better Auth string ID, foreign key)",
     )
     role: str = Field(
         description="Message origin: 'user' or 'assistant'",
@@ -187,7 +187,7 @@ class ConversationResponse(SQLModel):
     """
 
     id: uuid.UUID
-    user_id: uuid.UUID
+    user_id: str
     title: Optional[str]
     message_count: int = Field(description="Total number of messages in conversation")
     created_at: datetime
@@ -216,7 +216,7 @@ class MessageResponse(SQLModel):
 
     id: uuid.UUID
     conversation_id: uuid.UUID
-    user_id: uuid.UUID
+    user_id: str
     role: str
     content: str
     tool_calls: Optional[dict]

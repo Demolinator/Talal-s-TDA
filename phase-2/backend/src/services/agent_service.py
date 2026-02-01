@@ -58,10 +58,8 @@ async def add_task(
         description: Optional task description (max 2000 characters)
     """
     mcp_service = MCPToolsService(ctx.context.session)
-    user_id_uuid = uuid.UUID(ctx.context.user_id)
-
     result = mcp_service.add_task(
-        user_id=user_id_uuid,
+        user_id=ctx.context.user_id,
         title=title,
         description=description,
     )
@@ -96,10 +94,8 @@ async def list_tasks(
         offset: Number of tasks to skip (default 0)
     """
     mcp_service = MCPToolsService(ctx.context.session)
-    user_id_uuid = uuid.UUID(ctx.context.user_id)
-
     result = mcp_service.list_tasks(
-        user_id=user_id_uuid,
+        user_id=ctx.context.user_id,
         is_complete=is_complete,
         limit=limit,
         offset=offset,
@@ -142,11 +138,10 @@ async def complete_task(
         task_id: UUID of the task to mark complete
     """
     mcp_service = MCPToolsService(ctx.context.session)
-    user_id_uuid = uuid.UUID(ctx.context.user_id)
     task_id_uuid = uuid.UUID(task_id)
 
     result = mcp_service.complete_task(
-        user_id=user_id_uuid,
+        user_id=ctx.context.user_id,
         task_id=task_id_uuid,
     )
 
@@ -176,11 +171,10 @@ async def delete_task(
         task_id: UUID of the task to delete
     """
     mcp_service = MCPToolsService(ctx.context.session)
-    user_id_uuid = uuid.UUID(ctx.context.user_id)
     task_id_uuid = uuid.UUID(task_id)
 
     result = mcp_service.delete_task(
-        user_id=user_id_uuid,
+        user_id=ctx.context.user_id,
         task_id=task_id_uuid,
     )
 
@@ -214,11 +208,10 @@ async def update_task(
         is_complete: Optional new completion status
     """
     mcp_service = MCPToolsService(ctx.context.session)
-    user_id_uuid = uuid.UUID(ctx.context.user_id)
     task_id_uuid = uuid.UUID(task_id)
 
     result = mcp_service.update_task(
-        user_id=user_id_uuid,
+        user_id=ctx.context.user_id,
         task_id=task_id_uuid,
         title=title,
         description=description,
