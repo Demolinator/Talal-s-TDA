@@ -801,10 +801,11 @@ Example interactions:
             return await self._process_with_agent(user_id, user_message)
 
         except Exception as e:
-            logger.error(f"Agent processing failed: {e}", exc_info=True)
+            error_detail = f"{type(e).__name__}: {str(e)[:500]}"
+            logger.error(f"Agent processing failed: {error_detail}", exc_info=True)
             return {
                 "success": False,
-                "error": ErrorHandler.ERROR_MESSAGES["SERVER_ERROR"]["generic"],
+                "error": f"[DEBUG] {error_detail}",
             }
 
     def _update_context_from_history(
