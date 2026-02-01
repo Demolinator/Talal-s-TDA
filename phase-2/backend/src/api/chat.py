@@ -256,7 +256,7 @@ async def send_chat_message(
 
         # Process message through agent
         agent_service = AgentService(session)
-        agent_result = agent_service.process_user_message(
+        agent_result = await agent_service.process_user_message(
             user_id=current_user.id,
             user_message=req.content,
             conversation_history=conversation_history,

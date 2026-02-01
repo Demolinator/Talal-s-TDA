@@ -737,7 +737,7 @@ Example interactions:
             "tools": [tool.name for tool in self.agent.tools],
         }
 
-    def process_user_message(
+    async def process_user_message(
         self,
         user_id: str,
         user_message: str,
@@ -760,25 +760,25 @@ Example interactions:
 
             # Check for pending confirmation response
             if self.pending_confirmation:
-                return self._handle_confirmation_response(user_id, user_message)
+                return await self._handle_confirmation_response(user_id, user_message)
 
             # Detect intent
             intent = IntentDetector.detect_intent(user_message)
 
             # Check if confirmation required (for delete operations)
             if ConfirmationFlow.requires_confirmation(intent):
-                return self._handle_destructive_operation(
+                return await self._handle_destructive_operation(
                     user_id, user_message, intent
                 )
 
             # Process normal intent using OpenAI Agents SDK
-            return self._process_with_agent(user_id, user_message)
+            return await self._process_with_agent(user_id, user_message)
 
         except Exception as e:
             logger.error(f"Agent processing failed: {e}", exc_info=True)
             return {
                 "success": False,
-                "error": f"Agent error: {type(e).__name__}: {str(e)}",
+                "error": ErrorHandler.ERROR_MESSAGES["SERVER_ERROR"]["generic"],
             }
 
     def _update_context_from_history(
@@ -820,7 +820,7 @@ Example interactions:
                         if "tasks" in result_data:
                             self.last_list_result = result_data["tasks"]
 
-    def _handle_destructive_operation(
+    async def _handle_destructive_operation(
         self,
         user_id: str,
         user_message: str,
@@ -853,7 +853,7 @@ Example interactions:
             enhanced_message += context_hint
 
         # Run agent to identify task and get confirmation
-        result = Runner.run_sync(
+        result = await Runner.run(
             starting_agent=self.agent,
             input=f"""User wants to delete a task. Their message: "{user_message}"
 
@@ -886,7 +886,7 @@ First, use list_tasks to see their tasks. Then tell me which task they want to d
             "requires_confirmation": True,
         }
 
-    def _handle_confirmation_response(
+    async def _handle_confirmation_response(
         self,
         user_id: str,
         user_response: str
@@ -943,7 +943,7 @@ First, use list_tasks to see their tasks. Then tell me which task they want to d
             pending_confirmation=None,
         )
 
-        result = Runner.run_sync(
+        result = await Runner.run(
             starting_agent=self.agent,
             input=f"The user has confirmed they want to delete a task. Their original message was: '{pending['user_message']}'. Please proceed with deleting the task they identified.",
             context=context,
@@ -955,7 +955,7 @@ First, use list_tasks to see their tasks. Then tell me which task they want to d
             "tool_calls": [],
         }
 
-    def _process_with_agent(
+    async def _process_with_agent(
         self,
         user_id: str,
         user_message: str,
@@ -985,8 +985,8 @@ First, use list_tasks to see their tasks. Then tell me which task they want to d
             context_hint = f"\n\nContext - Recent tasks: {json.dumps(self.recent_tasks, indent=2)}"
             enhanced_message += context_hint
 
-        # Run the agent synchronously
-        result = Runner.run_sync(
+        # Run the agent
+        result = await Runner.run(
             starting_agent=self.agent,
             input=enhanced_message,
             context=context,
