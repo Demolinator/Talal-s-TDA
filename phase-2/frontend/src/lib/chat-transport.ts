@@ -14,6 +14,7 @@ import type {
   UIMessage,
   UIMessageChunk,
 } from "ai";
+import { getAuthToken } from "@/lib/token-storage";
 
 interface FastApiChatTransportOptions {
   api: string;
@@ -68,15 +69,27 @@ export class FastApiChatTransport implements ChatTransport<UIMessage> {
   }
 
   /**
+   * Build headers with auth token from localStorage
+   */
+  private getRequestHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...this.headers,
+    };
+    const token = getAuthToken();
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    return headers;
+  }
+
+  /**
    * Create a new conversation
    */
   private async createConversation(title?: string): Promise<string> {
     const response = await fetch(`${this.api}/conversations`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...this.headers,
-      },
+      headers: this.getRequestHeaders(),
       credentials: this.credentials || "include",
       body: JSON.stringify({ title: title || null }),
     });
@@ -142,10 +155,7 @@ export class FastApiChatTransport implements ChatTransport<UIMessage> {
         `${this.api}/conversations/${this.conversationId}/messages`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...this.headers,
-          },
+          headers: this.getRequestHeaders(),
           credentials: this.credentials || "include",
           body: JSON.stringify({ content: userContent } as SendMessageBody),
           signal: abortSignal,
