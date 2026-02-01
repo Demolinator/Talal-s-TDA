@@ -11,7 +11,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChatBot } from "@/components/chat/ChatBot";
 import { Header } from "@/components/layout/Header";
-import { authClient } from "@/lib/auth";
+import { getAuthToken } from "@/lib/token-storage";
+import { fetchAPI } from "@/lib/api";
 import type { TranslationValues } from "next-intl";
 
 interface ChatPageContentProps {
@@ -26,10 +27,15 @@ export default function ChatPage({ translations: t }: ChatPageContentProps) {
   useEffect(() => {
     async function checkAuth() {
       try {
-        const session = await authClient.getSession();
-        const sessionData = (session as any)?.data;
-        if (sessionData?.user?.id) {
-          setUserId(sessionData.user.id);
+        // Use stored token + backend session validation (same as task API)
+        const token = getAuthToken();
+        if (!token) {
+          router.push("/login");
+          return;
+        }
+        const userData = await fetchAPI<{ id: string }>("/api/auth/get-session");
+        if (userData?.id) {
+          setUserId(userData.id);
         } else {
           router.push("/login");
         }

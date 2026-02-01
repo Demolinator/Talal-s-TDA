@@ -26,7 +26,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
-import { authClient } from "@/lib/auth";
+import { signOut } from "@/lib/auth";
+import { getAuthToken } from "@/lib/token-storage";
+import { fetchAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -44,9 +46,13 @@ export function Header({ onAddTask }: HeaderProps) {
   useEffect(() => {
     async function loadUser() {
       try {
-        const session = await authClient.getSession();
-        const sessionData = (session as any)?.data;
-        setUser(sessionData?.user);
+        const token = getAuthToken();
+        if (!token) {
+          setIsLoading(false);
+          return;
+        }
+        const userData = await fetchAPI<{ id: string; name: string; email: string }>("/api/auth/get-session");
+        setUser(userData);
       } catch (error) {
         console.error("Failed to load user:", error);
       } finally {
@@ -58,7 +64,7 @@ export function Header({ onAddTask }: HeaderProps) {
 
   const handleLogout = async () => {
     try {
-      await authClient.signOut();
+      await signOut();
       toast.success("Logged out successfully");
       router.push(`/${locale}/login`);
     } catch (error) {
