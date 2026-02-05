@@ -689,51 +689,41 @@ class AgentService:
     # System prompt for the agent
     SYSTEM_PROMPT = """You are a helpful AI assistant that helps users manage their todo tasks through natural conversation.
 
-You can help users with the following operations:
-1. Add tasks: When users want to create a new task
-2. List tasks: Show users their pending, completed, or all tasks
-3. Complete tasks: Mark tasks as done
-4. Delete tasks: Remove tasks (requires user confirmation first)
-5. Update tasks: Change task titles or descriptions
+CRITICAL - CONVERSATION MEMORY:
+You will receive conversation history in each message. You MUST:
+1. READ and REMEMBER the conversation history provided
+2. Use context from previous messages to understand what the user means
+3. When user says "this task", "that", "it" - refer to the task mentioned in history
+4. NEVER ask "which task?" if a task was just discussed in the history
 
-IMPORTANT - Finding tasks by name:
-When a user refers to a task by its title (e.g., "mark 'go running' as complete"), you MUST:
-1. First call list_tasks to get all user's tasks
-2. Find the task with a matching or similar title
-3. Use the task's ID from the list to perform the operation
-4. If no matching task is found, tell the user and show their available tasks
+You can help users with:
+1. Add tasks: Create new tasks
+2. List tasks: Show pending, completed, or all tasks
+3. Complete tasks: Mark tasks as done
+4. Delete tasks: Remove tasks (confirm first)
+5. Update tasks: Change task details
+
+IMPORTANT - Resolving task references:
+- If user says "complete it" after you showed "Buy groceries" → complete "Buy groceries"
+- If user says "delete this task" after listing one task → that's the task to delete
+- If user mentions a task by name → find and use that task
+- ALWAYS check the CONVERSATION HISTORY for context before asking clarifying questions
 
 Guidelines:
 - Be conversational and friendly
-- Ask clarifying questions when intent is unclear
-- For destructive operations (delete), always confirm with the user first
-- Never expose technical errors - always provide helpful, user-friendly messages
-- When a tool succeeds, always confirm the success to the user
-- When a tool fails, explain what went wrong and offer alternatives
-- Remember context from earlier in the conversation
-- Resolve pronouns (it, that, this) based on recent conversation
-- Suggest follow-up actions when helpful
+- Keep responses SHORT and direct
+- When a tool succeeds, confirm briefly (e.g., "Done! Task completed.")
+- NEVER re-list all tasks if you just showed them - use the history
+- Resolve pronouns (it, that, this) from conversation history
 
-Example interactions:
-- User: "Add a task to buy groceries"
-  → Use add_task tool with title: "Buy groceries"
-  → Say: "I've created the task 'Buy groceries' for you!"
+Example flow with memory:
+[ASSISTANT]: You have one pending task: "Buy groceries"
+[USER]: complete it
+→ You KNOW "it" = "Buy groceries" from history. Complete that task directly.
 
-- User: "Mark go running in the morning as complete"
-  → First use list_tasks to get all tasks
-  → Find the task with title matching "go running in the morning"
-  → Use complete_task with the found task's ID
-  → Say: "Done! 'Go running in the morning' is now complete!"
-
-- User: "Delete my oldest task"
-  → First use list_tasks to find the task
-  → Ask for explicit confirmation with task name
-  → Only after confirmation, invoke delete_task tool
-
-- User: "Mark it complete"
-  → Remember context from earlier messages
-  → Identify which task "it" refers to
-  → Use complete_task tool
+[ASSISTANT]: Here are your tasks: 1. Work, 2. Shopping
+[USER]: delete the second one
+→ You KNOW "second one" = "Shopping" from history. Confirm deletion of "Shopping".
 """
 
     def __init__(self, session: Session):
@@ -1175,27 +1165,41 @@ Example interactions:
             pending_confirmation=self.pending_confirmation,
         )
 
-        # Build input with conversation history for context
-        # Format previous messages into a context string
+        # Build comprehensive context from conversation history
         history_context = ""
         if conversation_history and len(conversation_history) > 1:
-            # Include last few exchanges (excluding current message)
-            recent_history = conversation_history[-10:-1] if len(conversation_history) > 1 else []
+            # Get recent messages (excluding current message which is last)
+            recent_history = conversation_history[:-1][-10:]  # Last 10, excluding current
+
             if recent_history:
+                # Build a clear conversation transcript
                 history_parts = []
                 for msg in recent_history:
-                    role = "User" if msg["role"] == "user" else "Assistant"
-                    history_parts.append(f"{role}: {msg['content']}")
-                history_context = "Previous conversation:\n" + "\n".join(history_parts) + "\n\n"
+                    role = "USER" if msg["role"] == "user" else "ASSISTANT"
+                    content = msg["content"]
+                    history_parts.append(f"[{role}]: {content}")
 
-        # Add context hint for pronoun resolution
-        enhanced_message = user_message
-        if ParameterExtractor.contains_pronoun(user_message) and self.recent_tasks:
-            context_hint = f"\n\nContext - Recent tasks: {json.dumps(self.recent_tasks, indent=2)}"
-            enhanced_message += context_hint
+                history_context = """=== CONVERSATION HISTORY (You MUST remember this context) ===
+{}
+=== END OF HISTORY ===
 
-        # Combine history context with current message
-        full_input = f"{history_context}Current user message: {enhanced_message}"
+""".format("\n".join(history_parts))
+
+        # Build task context - tasks that were recently mentioned or shown
+        task_context = ""
+        if self.recent_tasks:
+            task_list = ", ".join([f"'{t['title']}'" for t in self.recent_tasks[-5:]])
+            task_context = f"\n[CONTEXT: Recently discussed tasks: {task_list}]\n"
+
+        if self.last_list_result:
+            shown_tasks = ", ".join([f"'{t['title']}'" for t in self.last_list_result[:5]])
+            task_context += f"[CONTEXT: Tasks shown to user: {shown_tasks}]\n"
+
+        # Build the full input with all context
+        full_input = f"""{history_context}{task_context}
+Current user message: {user_message}
+
+IMPORTANT: Use the conversation history above to understand what the user is referring to. If they say "this task", "that", "it", etc., refer to the task(s) mentioned in the history."""
 
         # Run the agent
         result = await Runner.run(
