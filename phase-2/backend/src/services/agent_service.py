@@ -682,8 +682,9 @@ class AgentService:
     """
 
     # Agent configuration — uses Gemini via OpenAI-compatible API
-    # gemini-3-flash-preview is the newest model (may have better rate limits)
-    MODEL = "gemini-3-flash-preview"
+    # Using gemini-1.5-flash for better rate limits (1,500 RPD vs 20 RPD for newer models)
+    # See: https://ai.google.dev/gemini-api/docs/rate-limits
+    MODEL = "gemini-1.5-flash"
     TEMPERATURE = 0.7
 
     # System prompt for the agent
