@@ -809,12 +809,20 @@ Example flow with memory:
             error_detail = f"{type(e).__name__}: {str(e)[:500]}"
             logger.error(f"Agent processing failed: {error_detail}", exc_info=True)
 
-            # Check if this is a rate limit error - if so, try direct tool execution
-            if "429" in str(e) or "rate" in str(e).lower() or "quota" in str(e).lower():
-                # Fallback: execute tool directly based on detected intent
-                fallback_result = await self._fallback_direct_execution(user_id, user_message, intent)
+            # Try fallback for any error (not just rate limits) to provide better UX
+            # Detect intent if not already done
+            try:
+                detected_intent = intent if 'intent' in dir() else IntentDetector.detect_intent(user_message)
+            except Exception:
+                detected_intent = "unknown"
+
+            # Try fallback execution
+            try:
+                fallback_result = await self._fallback_direct_execution(user_id, user_message, detected_intent)
                 if fallback_result:
                     return fallback_result
+            except Exception as fallback_err:
+                logger.error(f"Fallback also failed: {fallback_err}")
 
             # Return a user-friendly error, not technical details
             return {
@@ -899,6 +907,52 @@ Example flow with memory:
                                     "assistant_message": f"Done! '{task['title']}' is now marked complete.",
                                     "tool_calls": [{"id": str(uuid.uuid4()), "name": "complete_task", "result": complete_result}],
                                 }
+
+            elif intent == "update_task":
+                # Get all tasks to find the one to update
+                result = mcp_service.list_tasks(user_id=user_id)
+                if result.get("success") and result["tasks"]:
+                    tasks = result["tasks"]
+                    user_msg_lower = user_message.lower()
+
+                    # Try to find which task to update by name
+                    matched_task = None
+                    for task in tasks:
+                        if task["title"].lower() in user_msg_lower:
+                            matched_task = task
+                            break
+
+                    # Also check recent_tasks for context
+                    if not matched_task and self.recent_tasks:
+                        recent_id = self.recent_tasks[-1].get("task_id")
+                        for task in tasks:
+                            if task["id"] == recent_id:
+                                matched_task = task
+                                break
+
+                    if matched_task:
+                        # Ask what they want to update
+                        return {
+                            "success": True,
+                            "assistant_message": f"What would you like to update for **\"{matched_task['title']}\"**?\n\nYou can:\n- Change the title\n- Add or update the description\n- Mark it as complete or incomplete",
+                            "tool_calls": [{"id": str(uuid.uuid4()), "name": "list_tasks", "result": result}],
+                        }
+                    else:
+                        # Show tasks and ask which one
+                        task_list = "\n".join([f"• {t['title']}" for t in tasks[:5]])
+                        return {
+                            "success": True,
+                            "assistant_message": f"Which task would you like to update?\n\n{task_list}\n\nPlease tell me the task name and what you'd like to change.",
+                            "tool_calls": [{"id": str(uuid.uuid4()), "name": "list_tasks", "result": result}],
+                        }
+
+            elif intent == "unknown":
+                # For unknown intents, provide helpful response
+                return {
+                    "success": True,
+                    "assistant_message": "I can help you with:\n• **Add a task**: \"Add task buy groceries\"\n• **Show tasks**: \"Show my tasks\"\n• **Complete**: \"Mark buy groceries as complete\"\n• **Delete**: \"Delete the buy groceries task\"\n• **Update**: \"Update the task title\"\n\nWhat would you like to do?",
+                    "tool_calls": [],
+                }
 
             return None  # Fallback didn't handle it
 
