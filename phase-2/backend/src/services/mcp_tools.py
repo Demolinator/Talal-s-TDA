@@ -170,8 +170,11 @@ class MCPToolsService:
             Dictionary containing updated task details or error message
         """
         try:
+            # Convert UUID to string since Task.id is stored as str
+            task_id_str = str(task_id)
+
             # Retrieve and verify ownership
-            task = self.session.get(Task, task_id)
+            task = self.session.get(Task, task_id_str)
 
             if not task:
                 return {
@@ -225,8 +228,11 @@ class MCPToolsService:
             Dictionary confirming deletion or error message
         """
         try:
+            # Convert UUID to string since Task.id is stored as str
+            task_id_str = str(task_id)
+
             # Retrieve and verify ownership
-            task = self.session.get(Task, task_id)
+            task = self.session.get(Task, task_id_str)
 
             if not task:
                 return {
@@ -277,8 +283,11 @@ class MCPToolsService:
             Dictionary containing updated task details or error message
         """
         try:
+            # Convert UUID to string since Task.id is stored as str
+            task_id_str = str(task_id)
+
             # Retrieve and verify ownership
-            task = self.session.get(Task, task_id)
+            task = self.session.get(Task, task_id_str)
 
             if not task:
                 return {
