@@ -9,6 +9,7 @@
 
 import { createAuthClient } from "better-auth/react";
 import { setAuthToken as storeToken, clearAuthToken } from "./token-storage";
+import { fetchWithRetry } from "./api";
 
 /**
  * Better Auth client instance
@@ -65,11 +66,40 @@ export async function signUp(data: {
   email: string;
   password: string;
 }) {
-  return authClient.signUp.email({
-    name: data.name,
-    email: data.email,
-    password: data.password,
-  });
+  // Use fetchWithRetry to handle Railway cold starts (502 errors)
+  const response = await fetchWithRetry(
+    `${BACKEND_URL}/api/auth/sign-up/email`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+      }),
+    },
+    3, // Max 3 retries
+    2000 // Start with 2 second delay
+  );
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: "Signup failed" }));
+    return { error: { message: error.message || error.error || "Failed to create account" } };
+  }
+
+  const responseData = await response.json();
+  console.log("🔐 SIGNUP RESPONSE:", JSON.stringify(responseData, null, 2));
+
+  // Extract and store token if present
+  if (responseData.token) {
+    storeToken(responseData.token);
+    console.log("✅ Token stored successfully after signup");
+  }
+
+  return { data: responseData, error: null };
 }
 
 /**
@@ -78,18 +108,23 @@ export async function signUp(data: {
  * @param password - User's password
  */
 export async function signIn(data: { email: string; password: string }) {
-  // Use raw fetch instead of Better Auth client to get direct access to response
-  const response = await fetch(`${BACKEND_URL}/api/auth/sign-in/email`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+  // Use fetchWithRetry to handle Railway cold starts (502 errors)
+  const response = await fetchWithRetry(
+    `${BACKEND_URL}/api/auth/sign-in/email`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        email: data.email,
+        password: data.password,
+      }),
     },
-    credentials: "include",
-    body: JSON.stringify({
-      email: data.email,
-      password: data.password,
-    }),
-  });
+    3, // Max 3 retries
+    2000 // Start with 2 second delay (Railway can take a few seconds to wake)
+  );
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: "Login failed" }));

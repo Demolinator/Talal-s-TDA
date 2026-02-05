@@ -15,6 +15,7 @@ import type {
   UIMessageChunk,
 } from "ai";
 import { getAuthToken } from "@/lib/token-storage";
+import { fetchWithRetry } from "@/lib/api";
 
 interface FastApiChatTransportOptions {
   api: string;
@@ -85,14 +86,20 @@ export class FastApiChatTransport implements ChatTransport<UIMessage> {
 
   /**
    * Create a new conversation
+   * Uses retry logic to handle Railway cold starts
    */
   private async createConversation(title?: string): Promise<string> {
-    const response = await fetch(`${this.api}/conversations`, {
-      method: "POST",
-      headers: this.getRequestHeaders(),
-      credentials: this.credentials || "include",
-      body: JSON.stringify({ title: title || null }),
-    });
+    const response = await fetchWithRetry(
+      `${this.api}/conversations`,
+      {
+        method: "POST",
+        headers: this.getRequestHeaders(),
+        credentials: this.credentials || "include",
+        body: JSON.stringify({ title: title || null }),
+      },
+      3, // Max retries
+      2000 // Base delay
+    );
 
     if (!response.ok) {
       const error = await response.json();
@@ -150,8 +157,8 @@ export class FastApiChatTransport implements ChatTransport<UIMessage> {
         }
       }
 
-      // Send message to the conversation
-      const response = await fetch(
+      // Send message to the conversation (with retry for cold starts)
+      const response = await fetchWithRetry(
         `${this.api}/conversations/${this.conversationId}/messages`,
         {
           method: "POST",
@@ -159,7 +166,9 @@ export class FastApiChatTransport implements ChatTransport<UIMessage> {
           credentials: this.credentials || "include",
           body: JSON.stringify({ content: userContent } as SendMessageBody),
           signal: abortSignal,
-        }
+        },
+        3, // Max retries
+        2000 // Base delay
       );
 
       if (!response.ok) {

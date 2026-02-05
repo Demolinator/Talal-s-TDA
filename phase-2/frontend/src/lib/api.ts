@@ -12,6 +12,52 @@
 
 import { getAuthToken } from "./token-storage";
 
+// ==============================================================================
+// Retry Logic for Railway Cold Start
+// ==============================================================================
+
+/**
+ * Fetch with automatic retry for Railway cold starts
+ * Retries on 502/503 errors which indicate server is waking up
+ */
+export async function fetchWithRetry(
+  url: string,
+  options?: RequestInit,
+  maxRetries = 3,
+  baseDelay = 1000
+): Promise<Response> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+
+      // If server is waking up (502/503), retry
+      if (response.status === 502 || response.status === 503) {
+        if (attempt < maxRetries - 1) {
+          const delay = baseDelay * Math.pow(2, attempt); // Exponential backoff
+          console.log(`⏳ Server waking up... retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+      }
+
+      return response;
+    } catch (error) {
+      lastError = error as Error;
+      // Network error - retry
+      if (attempt < maxRetries - 1) {
+        const delay = baseDelay * Math.pow(2, attempt);
+        console.log(`⏳ Network error, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+    }
+  }
+
+  throw lastError || new Error("Request failed after retries");
+}
+
 // Use environment variable from Vercel, fallback to production URL
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
