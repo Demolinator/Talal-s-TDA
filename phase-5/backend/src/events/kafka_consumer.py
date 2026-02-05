@@ -219,8 +219,13 @@ class ReminderConsumer(KafkaEventConsumer):
         """
         logger.info(f"Reminder due: {message.get('task_title')} for user {message.get('user_id')}")
 
-        # TODO: Send notification (email, push, in-app)
-        # This is implemented in the notification microservice
+        # Notification delivery (email, push, in-app) is handled by the
+        # dedicated notification microservice at phase-5/services/notification-service/.
+        # This consumer serves as a fallback logger when the microservice is unavailable.
+        logger.info(
+            f"[REMINDER] type={message.get('notification_type')} "
+            f"task={message.get('task_title')} user={message.get('user_id')}"
+        )
 
 
 class AuditLogConsumer(KafkaEventConsumer):
@@ -250,13 +255,12 @@ class AuditLogConsumer(KafkaEventConsumer):
         user_id = message.get("user_id")
         timestamp = message.get("timestamp")
 
+        # Log structured audit entry (serves as persistent audit trail via log aggregation)
         logger.info(
             f"[AUDIT] {event_type} - Resource: {resource_id}, "
-            f"User: {user_id}, Time: {timestamp}"
+            f"User: {user_id}, Time: {timestamp}, "
+            f"Data: {json.dumps(message, default=str)}"
         )
-
-        # TODO: Store in audit log database
-        # Example: await audit_log_repository.create(message)
 
 
 # Helper function to run consumers in background

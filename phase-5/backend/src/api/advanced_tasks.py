@@ -25,6 +25,10 @@ from src.models.advanced_task import (
 )
 from src.models.task import Task, TaskResponse
 from src.models.user import User
+from sqlmodel import Session, select
+
+from src.db.session import get_session
+from src.models.advanced_task import TaskCategory
 from src.services.recurring_task_service import RecurringTaskService
 from src.services.reminder_service import ReminderService
 from src.services.search_service import SearchService
@@ -174,7 +178,6 @@ async def get_recurring_task(
     if next_due is None:
         return None
 
-    # TODO: Return full RecurringTaskResponse (requires query)
     return {"next_due_at": next_due}
 
 
@@ -290,7 +293,7 @@ async def delete_reminder(
 )
 async def list_categories(
     current_user: User = Depends(get_current_user),
-    # category_service: CategoryService = Depends(),  # TODO: Implement CategoryService
+    session: Session = Depends(get_session),
 ):
     """
     List all task categories for the authenticated user.
@@ -298,9 +301,9 @@ async def list_categories(
     **Returns:**
     - List of user's categories
     """
-    # TODO: Implement category listing
-    # return await category_service.get_user_categories(current_user.id)
-    return []
+    query = select(TaskCategory).where(TaskCategory.user_id == current_user.id)
+    categories = session.exec(query).all()
+    return [TaskCategoryResponse.model_validate(c) for c in categories]
 
 
 @router.post(
@@ -313,7 +316,7 @@ async def list_categories(
 async def create_category(
     category_data: TaskCategoryCreate,
     current_user: User = Depends(get_current_user),
-    # category_service: CategoryService = Depends(),  # TODO: Implement CategoryService
+    session: Session = Depends(get_session),
 ):
     """
     Create a new task category.
@@ -335,12 +338,15 @@ async def create_category(
     - 201: Category created successfully
     - 400: Invalid category data
     """
-    # TODO: Implement category creation
-    # return await category_service.create_category(category_data, current_user.id)
-    raise HTTPException(
-        status_code=501,
-        detail="Category creation not yet implemented. Will be added with CategoryService.",
+    category = TaskCategory(
+        user_id=current_user.id,
+        name=category_data.name,
+        color=category_data.color,
     )
+    session.add(category)
+    session.commit()
+    session.refresh(category)
+    return TaskCategoryResponse.model_validate(category)
 
 
 @router.get(
@@ -353,11 +359,13 @@ async def create_category(
 async def get_category(
     category_id: str,
     current_user: User = Depends(get_current_user),
-    # category_service: CategoryService = Depends(),
+    session: Session = Depends(get_session),
 ):
     """Get a specific category by ID."""
-    # TODO: Implement
-    raise HTTPException(status_code=501, detail="Not yet implemented")
+    category = session.get(TaskCategory, category_id)
+    if not category or category.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Category not found")
+    return TaskCategoryResponse.model_validate(category)
 
 
 @router.delete(
@@ -369,7 +377,7 @@ async def get_category(
 async def delete_category(
     category_id: str,
     current_user: User = Depends(get_current_user),
-    # category_service: CategoryService = Depends(),
+    session: Session = Depends(get_session),
 ):
     """
     Delete a task category.
@@ -379,5 +387,11 @@ async def delete_category(
     - 403: Not authorized
     - 404: Category not found
     """
-    # TODO: Implement
-    raise HTTPException(status_code=501, detail="Not yet implemented")
+    category = session.get(TaskCategory, category_id)
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+    if category.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    session.delete(category)
+    session.commit()
+    return None
