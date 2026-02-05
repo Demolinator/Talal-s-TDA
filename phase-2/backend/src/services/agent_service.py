@@ -951,9 +951,16 @@ Example interactions:
                                 "title": task.get("title"),
                             })
 
-                        # Store list results for ordinal reference
+                        # Store list results for ordinal reference AND recent_tasks
                         if "tasks" in result_data:
                             self.last_list_result = result_data["tasks"]
+                            # Add listed tasks to recent_tasks for pronoun resolution
+                            # e.g., "delete this task" after showing 1 task
+                            for listed_task in result_data["tasks"]:
+                                self.recent_tasks.append({
+                                    "task_id": listed_task.get("id"),
+                                    "title": listed_task.get("title"),
+                                })
 
     async def _handle_destructive_operation(
         self,

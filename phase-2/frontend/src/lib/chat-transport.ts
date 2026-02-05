@@ -191,29 +191,12 @@ export class FastApiChatTransport implements ChatTransport<UIMessage> {
 
       const data = (await response.json()) as SendMessageResponse;
 
-      // Create a readable stream for the response
+      // Create a readable stream for the assistant response only
+      // User message is already shown in the UI when sent, don't duplicate it
       const stream = new ReadableStream<UIMessageChunk>({
         async start(controller) {
           try {
-            const userId = data.user_message.id;
             const assistantId = data.assistant_message.id;
-
-            // Send user message text
-            controller.enqueue({
-              type: "text-start",
-              id: userId,
-            });
-
-            controller.enqueue({
-              type: "text-delta",
-              delta: data.user_message.content,
-              id: userId,
-            });
-
-            controller.enqueue({
-              type: "text-end",
-              id: userId,
-            });
 
             // Send assistant message text in chunks for streaming effect
             controller.enqueue({
