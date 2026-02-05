@@ -682,8 +682,8 @@ class AgentService:
     """
 
     # Agent configuration — uses Gemini via OpenAI-compatible API
-    # gemini-1.5-flash has higher rate limits (1500 RPD free tier vs 20 for 2.5-flash-lite)
-    MODEL = "gemini-1.5-flash"
+    # gemini-2.0-flash has higher rate limits than gemini-2.5-flash-lite
+    MODEL = "gemini-2.0-flash"
     TEMPERATURE = 0.7
 
     # System prompt for the agent
