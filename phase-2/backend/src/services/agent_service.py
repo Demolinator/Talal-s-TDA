@@ -812,7 +812,7 @@ Example interactions:
                 )
 
             # Process normal intent using OpenAI Agents SDK
-            return await self._process_with_agent(user_id, user_message)
+            return await self._process_with_agent(user_id, user_message, conversation_history)
 
         except Exception as e:
             error_detail = f"{type(e).__name__}: {str(e)[:500]}"
@@ -1004,6 +1004,7 @@ First, use list_tasks to see their tasks. Then tell me which task they want to d
         self,
         user_id: str,
         user_message: str,
+        conversation_history: list[dict[str, str]] = None,
     ) -> dict[str, Any]:
         """
         Process user message using OpenAI Agents SDK.
@@ -1011,6 +1012,7 @@ First, use list_tasks to see their tasks. Then tell me which task they want to d
         Args:
             user_id: UUID of the user
             user_message: User's message
+            conversation_history: Previous messages for context
 
         Returns:
             Agent response with tool calls
@@ -1024,16 +1026,32 @@ First, use list_tasks to see their tasks. Then tell me which task they want to d
             pending_confirmation=self.pending_confirmation,
         )
 
+        # Build input with conversation history for context
+        # Format previous messages into a context string
+        history_context = ""
+        if conversation_history and len(conversation_history) > 1:
+            # Include last few exchanges (excluding current message)
+            recent_history = conversation_history[-10:-1] if len(conversation_history) > 1 else []
+            if recent_history:
+                history_parts = []
+                for msg in recent_history:
+                    role = "User" if msg["role"] == "user" else "Assistant"
+                    history_parts.append(f"{role}: {msg['content']}")
+                history_context = "Previous conversation:\n" + "\n".join(history_parts) + "\n\n"
+
         # Add context hint for pronoun resolution
         enhanced_message = user_message
-        if ParameterExtractor.contains_pronoun(user_message):
+        if ParameterExtractor.contains_pronoun(user_message) and self.recent_tasks:
             context_hint = f"\n\nContext - Recent tasks: {json.dumps(self.recent_tasks, indent=2)}"
             enhanced_message += context_hint
+
+        # Combine history context with current message
+        full_input = f"{history_context}Current user message: {enhanced_message}"
 
         # Run the agent
         result = await Runner.run(
             starting_agent=self.agent,
-            input=enhanced_message,
+            input=full_input,
             context=context,
             run_config=self.run_config,
         )
