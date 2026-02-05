@@ -36,7 +36,7 @@ spec:
       serviceAccountName: todo-backend-sa
       containers:
         - name: backend
-          image: ghcr.io/yourusername/todo-backend:latest
+          image: ghcr.io/demolinator/todo-backend:latest
           imagePullPolicy: Always
           ports:
             - name: http
@@ -71,7 +71,7 @@ spec:
             - name: ENVIRONMENT
               value: "production"
             - name: CORS_ORIGINS
-              value: "https://todo-app.yourdomain.com"
+              value: "https://todo-app.demolinator.dev"
             - name: LOG_LEVEL
               value: "info"
 

@@ -22,7 +22,7 @@ spec:
         spec:
           allowedOrigins:
             - "http://localhost:3000"
-            - "https://todo-app.yourdomain.com"
+            - "https://todo-app.demolinator.dev"
           allowedMethods:
             - GET
             - POST
