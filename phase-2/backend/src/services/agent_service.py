@@ -818,12 +818,103 @@ Example interactions:
         except Exception as e:
             error_detail = f"{type(e).__name__}: {str(e)[:500]}"
             logger.error(f"Agent processing failed: {error_detail}", exc_info=True)
+
+            # Check if this is a rate limit error - if so, try direct tool execution
+            if "429" in str(e) or "rate" in str(e).lower() or "quota" in str(e).lower():
+                # Fallback: execute tool directly based on detected intent
+                fallback_result = await self._fallback_direct_execution(user_id, user_message, intent)
+                if fallback_result:
+                    return fallback_result
+
             # Return a user-friendly error, not technical details
             return {
                 "success": True,  # Mark as success so frontend shows the message
                 "assistant_message": "I'm sorry, I had trouble processing that request. Could you please try again or rephrase your request?",
                 "tool_calls": [],
             }
+
+    async def _fallback_direct_execution(
+        self,
+        user_id: str,
+        user_message: str,
+        intent: str,
+    ) -> Optional[dict[str, Any]]:
+        """
+        Fallback to direct tool execution when rate limited.
+        Bypasses the AI agent and executes tools directly based on intent.
+        """
+        try:
+            mcp_service = MCPToolsService(self.session)
+
+            if intent == "add_task":
+                # Extract title from message (simple extraction)
+                title = user_message
+                for prefix in ["add a task to ", "add task to ", "add a task ", "add task ",
+                               "create a task to ", "create task to ", "create a task ", "create task ",
+                               "new task to ", "new task ", "remember to ", "remind me to "]:
+                    if user_message.lower().startswith(prefix):
+                        title = user_message[len(prefix):].strip()
+                        break
+
+                # Clean up the title
+                title = title.strip('"\'').capitalize()
+                if not title:
+                    title = user_message
+
+                result = mcp_service.add_task(user_id=user_id, title=title)
+                if result.get("success"):
+                    task = result["task"]
+                    return {
+                        "success": True,
+                        "assistant_message": f"Done! I've added '{task['title']}' to your tasks.",
+                        "tool_calls": [{"id": str(uuid.uuid4()), "name": "add_task", "result": result}],
+                    }
+
+            elif intent == "list_tasks":
+                # Determine filter from message
+                is_complete = None
+                if "completed" in user_message.lower() or "done" in user_message.lower():
+                    is_complete = True
+                elif "pending" in user_message.lower() or "incomplete" in user_message.lower():
+                    is_complete = False
+
+                result = mcp_service.list_tasks(user_id=user_id, is_complete=is_complete)
+                if result.get("success"):
+                    tasks = result["tasks"]
+                    if not tasks:
+                        return {
+                            "success": True,
+                            "assistant_message": "You don't have any tasks yet. Would you like to create one?",
+                            "tool_calls": [{"id": str(uuid.uuid4()), "name": "list_tasks", "result": result}],
+                        }
+
+                    task_list = "\n".join([f"• {t['title']}" + (" ✓" if t['is_complete'] else "") for t in tasks[:10]])
+                    return {
+                        "success": True,
+                        "assistant_message": f"Here are your tasks ({len(tasks)} total):\n{task_list}",
+                        "tool_calls": [{"id": str(uuid.uuid4()), "name": "list_tasks", "result": result}],
+                    }
+
+            elif intent == "complete_task":
+                # Try to find task by name in message
+                result = mcp_service.list_tasks(user_id=user_id, is_complete=False)
+                if result.get("success") and result["tasks"]:
+                    # Find matching task
+                    for task in result["tasks"]:
+                        if task["title"].lower() in user_message.lower():
+                            complete_result = mcp_service.complete_task(user_id=user_id, task_id=uuid.UUID(task["id"]))
+                            if complete_result.get("success"):
+                                return {
+                                    "success": True,
+                                    "assistant_message": f"Done! '{task['title']}' is now marked complete.",
+                                    "tool_calls": [{"id": str(uuid.uuid4()), "name": "complete_task", "result": complete_result}],
+                                }
+
+            return None  # Fallback didn't handle it
+
+        except Exception as fallback_error:
+            logger.error(f"Fallback execution failed: {fallback_error}")
+            return None
 
     def _update_context_from_history(
         self,
