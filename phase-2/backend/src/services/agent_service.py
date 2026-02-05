@@ -652,16 +652,17 @@ class ErrorHandler:
 class GeminiModelProvider(ModelProvider):
     """Custom model provider that routes to Google Gemini via its OpenAI-compatible API."""
 
-    def __init__(self):
+    def __init__(self, model_override: str | None = None):
         api_key = os.environ.get("GEMINI_API_KEY", "")
         self.client = AsyncOpenAI(
             api_key=api_key,
             base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
         )
+        self._model_override = model_override
 
     def get_model(self, model_name: str | None) -> OpenAIChatCompletionsModel:
         return OpenAIChatCompletionsModel(
-            model=model_name or AgentService.MODEL,
+            model=self._model_override or model_name or AgentService.MODEL,
             openai_client=self.client,
         )
 
@@ -677,14 +678,22 @@ class AgentService:
     - Pronoun resolution
     - Confirmation flows for destructive operations
     - User-friendly error handling
+    - Model rotation for reliability
 
     Based on Phase III Agent Behavior Specification.
     """
 
-    # Agent configuration — uses Gemini via OpenAI-compatible API
-    # Using gemini-1.5-flash for better rate limits (1,500 RPD vs 20 RPD for newer models)
-    # See: https://ai.google.dev/gemini-api/docs/rate-limits
-    MODEL = "gemini-1.5-flash"
+    # Model rotation — try these models in order until one works
+    # OpenAI-compatible endpoint supports: gemini-2.0-flash, gemini-1.5-flash,
+    # gemini-2.5-flash-preview, gemini-3-flash-preview
+    # Different models have different rate limits on free tier
+    MODELS = [
+        "gemini-2.0-flash",         # Stable, good rate limits
+        "gemini-2.5-flash-preview", # Newer, may have lower RPD
+        "gemini-1.5-flash",         # Older but reliable
+        "gemini-1.5-flash-8b",      # Lightweight, high RPD
+    ]
+    MODEL = MODELS[0]  # Default model
     TEMPERATURE = 0.7
 
     # System prompt for the agent
@@ -736,19 +745,6 @@ Example flow with memory:
         """
         self.session = session
 
-        # Create the agent with tools
-        self.agent = Agent[AgentContext](
-            name="TodoAssistant",
-            instructions=self.SYSTEM_PROMPT,
-            tools=[add_task, list_tasks, complete_task, delete_task, update_task],
-            model=self.MODEL,
-        )
-
-        # Configure Gemini as the model provider
-        self.run_config = RunConfig(
-            model_provider=GeminiModelProvider(),
-        )
-
         # Conversation context state
         self.recent_tasks: list[dict] = []  # Recently mentioned tasks
         self.last_list_result: Optional[list] = None  # Last task list
@@ -761,12 +757,14 @@ Example flow with memory:
         Returns:
             Dictionary with agent initialization status and available tools
         """
+        tool_names = ["add_task", "list_tasks", "complete_task", "delete_task", "update_task"]
         return {
             "status": "initialized",
-            "model": self.MODEL,
+            "models": self.MODELS,
+            "default_model": self.MODEL,
             "temperature": self.TEMPERATURE,
-            "tools_count": len(self.agent.tools),
-            "tools": [tool.name for tool in self.agent.tools],
+            "tools_count": len(tool_names),
+            "tools": tool_names,
         }
 
     async def process_user_message(
@@ -813,7 +811,7 @@ Example flow with memory:
             # Try fallback for any error (not just rate limits) to provide better UX
             # Detect intent if not already done
             try:
-                detected_intent = intent if 'intent' in dir() else IntentDetector.detect_intent(user_message)
+                detected_intent = locals().get("intent") or IntentDetector.detect_intent(user_message)
             except Exception:
                 detected_intent = "unknown"
 
@@ -1318,13 +1316,47 @@ Current user message: {user_message}
 
 IMPORTANT: Use the conversation history above to understand what the user is referring to. If they say "this task", "that", "it", etc., refer to the task(s) mentioned in the history."""
 
-        # Run the agent
-        result = await Runner.run(
-            starting_agent=self.agent,
-            input=full_input,
-            context=context,
-            run_config=self.run_config,
-        )
+        # Run the agent with model rotation — try each model until one works
+        result = None
+        last_error = None
+        for model_name in self.MODELS:
+            try:
+                logger.info(f"Trying model: {model_name}")
+                # Create agent and config for this specific model
+                agent = Agent[AgentContext](
+                    name="TodoAssistant",
+                    instructions=self.SYSTEM_PROMPT,
+                    tools=[add_task, list_tasks, complete_task, delete_task, update_task],
+                    model=model_name,
+                )
+                run_config = RunConfig(
+                    model_provider=GeminiModelProvider(model_override=model_name),
+                )
+                result = await Runner.run(
+                    starting_agent=agent,
+                    input=full_input,
+                    context=context,
+                    run_config=run_config,
+                )
+                logger.info(f"Model {model_name} succeeded")
+                break  # Success, stop trying
+            except Exception as model_err:
+                err_str = str(model_err).lower()
+                last_error = model_err
+                # Retry on rate limit or model not found errors
+                if any(keyword in err_str for keyword in [
+                    "429", "rate limit", "resource exhausted",
+                    "404", "not found", "does not exist",
+                    "quota", "exceeded",
+                ]):
+                    logger.warning(f"Model {model_name} failed ({type(model_err).__name__}), trying next...")
+                    continue
+                else:
+                    # Non-retryable error, propagate
+                    raise
+
+        if result is None:
+            raise last_error or RuntimeError("All models failed")
 
         # Extract tool calls from the result
         tool_calls = []
