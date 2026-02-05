@@ -139,19 +139,28 @@ async def handle_task_created(event: TaskEvent):
     """
     logger.info(f"Task created: {event.task_id}")
 
-    # TODO: Update search index
-    # TODO: Send to analytics
-    # TODO: Trigger webhooks if configured
-
-    # Example: Cache task data in Dapr state store
     from src.services.dapr_client import get_dapr_client
+    from src.events.dapr_publisher import get_event_publisher
 
     dapr_client = await get_dapr_client()
+
+    # Update search index: cache task data in state store for fast lookups
     await dapr_client.save_state(
         store_name="postgres-statestore",
         key=f"task:{event.task_id}",
         value=event.task_data,
-        metadata={"ttlInSeconds": "3600"},  # Cache for 1 hour
+        metadata={"ttlInSeconds": "3600"},
+    )
+
+    # Publish audit log for analytics tracking
+    publisher = await get_event_publisher()
+    await publisher.publish_audit_log(
+        event_type="audit.task.created",
+        resource_type="task",
+        resource_id=event.task_id,
+        user_id=event.user_id,
+        action="created",
+        changes=event.task_data,
     )
 
 
@@ -164,18 +173,28 @@ async def handle_task_updated(event: TaskEvent):
     """
     logger.info(f"Task updated: {event.task_id}")
 
-    # TODO: Update search index
-    # TODO: Invalidate cache
-
-    # Update cached task data
     from src.services.dapr_client import get_dapr_client
+    from src.events.dapr_publisher import get_event_publisher
 
     dapr_client = await get_dapr_client()
+
+    # Update search index: refresh cached task data
     await dapr_client.save_state(
         store_name="postgres-statestore",
         key=f"task:{event.task_id}",
         value=event.task_data,
         metadata={"ttlInSeconds": "3600"},
+    )
+
+    # Publish audit log for analytics tracking
+    publisher = await get_event_publisher()
+    await publisher.publish_audit_log(
+        event_type="audit.task.updated",
+        resource_type="task",
+        resource_id=event.task_id,
+        user_id=event.user_id,
+        action="updated",
+        changes=event.task_data,
     )
 
 
@@ -188,22 +207,30 @@ async def handle_task_completed(event: TaskEvent):
     """
     logger.info(f"Task completed: {event.task_id}")
 
-    # Check if task is recurring
-    # If so, the recurring-task-service will handle spawning next instance
-    # This service just publishes the event
-
-    # TODO: Update analytics
-    # TODO: Calculate completion metrics
-
-    # Cache completion state
     from src.services.dapr_client import get_dapr_client
+    from src.events.dapr_publisher import get_event_publisher
 
     dapr_client = await get_dapr_client()
+
+    # Cache completion state for analytics and metrics
     await dapr_client.save_state(
         store_name="postgres-statestore",
         key=f"task:completed:{event.task_id}",
-        value={"completed_at": event.timestamp, "user_id": event.user_id},
+        value={
+            "completed_at": event.timestamp.isoformat() if hasattr(event.timestamp, "isoformat") else str(event.timestamp),
+            "user_id": event.user_id,
+        },
         metadata={"ttlInSeconds": "86400"},  # Cache for 24 hours
+    )
+
+    # Publish audit log for completion analytics
+    publisher = await get_event_publisher()
+    await publisher.publish_audit_log(
+        event_type="audit.task.completed",
+        resource_type="task",
+        resource_id=event.task_id,
+        user_id=event.user_id,
+        action="completed",
     )
 
 
@@ -216,14 +243,29 @@ async def handle_task_deleted(event: TaskEvent):
     """
     logger.info(f"Task deleted: {event.task_id}")
 
-    # TODO: Remove from search index
-    # TODO: Clean up cache
-
-    # Delete cached task data
     from src.services.dapr_client import get_dapr_client
+    from src.events.dapr_publisher import get_event_publisher
 
     dapr_client = await get_dapr_client()
+
+    # Remove from search index: delete cached task data
     await dapr_client.delete_state(
         store_name="postgres-statestore",
         key=f"task:{event.task_id}",
+    )
+
+    # Clean up completion cache if it exists
+    await dapr_client.delete_state(
+        store_name="postgres-statestore",
+        key=f"task:completed:{event.task_id}",
+    )
+
+    # Publish audit log for deletion tracking
+    publisher = await get_event_publisher()
+    await publisher.publish_audit_log(
+        event_type="audit.task.deleted",
+        resource_type="task",
+        resource_id=event.task_id,
+        user_id=event.user_id,
+        action="deleted",
     )

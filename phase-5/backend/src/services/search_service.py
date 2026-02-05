@@ -180,9 +180,8 @@ class SearchService:
             "created_at": Task.created_at,
             "updated_at": Task.updated_at,
             "title": Task.title,
-            # NOTE: These require extended Task model with additional fields
-            # "due_date": Task.due_date,
-            # "priority": Task.priority,
+            "due_date": Task.due_date,
+            "priority": Task.priority,
         }
 
         if sort_by not in sort_columns:

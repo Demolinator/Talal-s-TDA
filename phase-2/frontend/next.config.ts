@@ -5,6 +5,7 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
   /* config options here */
+  output: 'standalone',
 
   // Generate unique build IDs to bypass ALL caches
   generateBuildId: async () => {

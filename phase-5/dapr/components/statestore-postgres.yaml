@@ -35,7 +35,8 @@ spec:
 
 ---
 # Kubernetes Secret for PostgreSQL connection
-# NOTE: Replace with actual credentials or use external secret management (e.g., Sealed Secrets, External Secrets Operator)
+# EXAMPLE ONLY: Replace password and connection details with actual credentials before deploying.
+# In production, use external secret management (e.g., Sealed Secrets, External Secrets Operator, Azure Key Vault).
 apiVersion: v1
 kind: Secret
 metadata:

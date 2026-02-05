@@ -8,6 +8,7 @@ Migration to add:
 - task_categories table
 """
 
+import os
 from datetime import datetime
 import uuid
 from typing import Optional
@@ -29,7 +30,11 @@ def upgrade():
 
     Run this to upgrade the database schema.
     """
-    engine = create_engine("postgresql://todo_user:todo_password@localhost:5432/todo_db")
+    database_url = os.environ.get(
+        "DATABASE_URL",
+        "postgresql://todo_user:todo_password@localhost:5432/todo_db",
+    )
+    engine = create_engine(database_url)
 
     with Session(engine) as session:
         # Add columns to tasks table
@@ -112,7 +117,11 @@ def downgrade():
 
     Run this to rollback the database schema.
     """
-    engine = create_engine("postgresql://todo_user:todo_password@localhost:5432/todo_db")
+    database_url = os.environ.get(
+        "DATABASE_URL",
+        "postgresql://todo_user:todo_password@localhost:5432/todo_db",
+    )
+    engine = create_engine(database_url)
 
     with Session(engine) as session:
         # Drop tables

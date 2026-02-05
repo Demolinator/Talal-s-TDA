@@ -6,11 +6,14 @@ Subscribes to 'reminders' Kafka topic via Dapr pub/sub and
 delivers notifications via email, push, or in-app methods.
 """
 
+import json
 import logging
 import os
+import uuid
 from datetime import datetime
 from typing import Any, Dict
 
+import httpx
 from fastapi import FastAPI, HTTPException, Request, Response
 from pydantic import BaseModel
 
@@ -136,25 +139,23 @@ async def send_email_notification(reminder: ReminderEvent):
     """
     Send email notification.
 
-    In production, integrate with SendGrid, AWS SES, or similar service.
+    Logs a structured email payload. In production, replace the logger call
+    with an actual email provider (SendGrid, AWS SES, etc.).
     """
-    logger.info(f"[EMAIL] Reminder for task: {reminder.task_title}")
-
-    # TODO: Integrate with email service
-    # Example with SendGrid:
-    # sendgrid_api_key = os.getenv("SENDGRID_API_KEY")
-    # if sendgrid_api_key:
-    #     sg = SendGridAPIClient(sendgrid_api_key)
-    #     message = Mail(
-    #         from_email="noreply@yourdomain.com",
-    #         to_emails=get_user_email(reminder.user_id),
-    #         subject=f"Reminder: {reminder.task_title}",
-    #         html_content=f"<p>Your task '{reminder.task_title}' is due soon.</p>"
-    #     )
-    #     response = sg.send(message)
-    #     logger.info(f"Email sent: {response.status_code}")
-
-    # For now, just log
+    email_payload = {
+        "from": "noreply@todo-app.example.com",
+        "to": f"user-{reminder.user_id}@todo-app.example.com",
+        "subject": f"Reminder: {reminder.task_title}",
+        "body": (
+            f"Hi,\n\n"
+            f"This is a reminder for your task: '{reminder.task_title}'.\n"
+            f"Scheduled reminder time: {reminder.remind_at}\n\n"
+            f"-- Todo App Notification Service"
+        ),
+    }
+    logger.info(
+        f"[EMAIL] Sending email notification: {json.dumps(email_payload, indent=2)}"
+    )
     logger.info(f"Email notification sent for reminder {reminder.reminder_id}")
 
 
@@ -162,26 +163,21 @@ async def send_push_notification(reminder: ReminderEvent):
     """
     Send push notification.
 
-    In production, integrate with Firebase Cloud Messaging (FCM),
-    Apple Push Notification service (APNs), or similar.
+    Logs a structured push payload. In production, integrate with Firebase
+    Cloud Messaging (FCM) or Apple Push Notification service (APNs).
     """
-    logger.info(f"[PUSH] Reminder for task: {reminder.task_title}")
-
-    # TODO: Integrate with push service
-    # Example with FCM:
-    # fcm_server_key = os.getenv("FCM_SERVER_KEY")
-    # user_device_token = get_user_device_token(reminder.user_id)
-    # if fcm_server_key and user_device_token:
-    #     message = messaging.Message(
-    #         notification=messaging.Notification(
-    #             title="Task Reminder",
-    #             body=f"{reminder.task_title} is due soon"
-    #         ),
-    #         token=user_device_token
-    #     )
-    #     response = messaging.send(message)
-    #     logger.info(f"Push sent: {response}")
-
+    push_payload = {
+        "title": "Task Reminder",
+        "body": f"{reminder.task_title} is due soon",
+        "data": {
+            "task_id": reminder.task_id,
+            "reminder_id": reminder.reminder_id,
+            "user_id": reminder.user_id,
+        },
+    }
+    logger.info(
+        f"[PUSH] Sending push notification: {json.dumps(push_payload, indent=2)}"
+    )
     logger.info(f"Push notification sent for reminder {reminder.reminder_id}")
 
 
@@ -189,25 +185,54 @@ async def send_in_app_notification(reminder: ReminderEvent):
     """
     Send in-app notification.
 
-    Store notification in database for user to see when they next visit the app.
+    Stores the notification in the Dapr state store so the user sees it
+    when they next visit the app.
     """
     logger.info(f"[IN-APP] Reminder for task: {reminder.task_title}")
 
-    # TODO: Store in database or publish to WebSocket for real-time delivery
-    # Example:
-    # notification = {
-    #     "id": str(uuid.uuid4()),
-    #     "user_id": reminder.user_id,
-    #     "type": "reminder",
-    #     "title": "Task Reminder",
-    #     "message": f"{reminder.task_title} is due soon",
-    #     "task_id": reminder.task_id,
-    #     "created_at": datetime.utcnow().isoformat(),
-    #     "is_read": False,
-    # }
-    # await db.notifications.insert_one(notification)
+    notification = {
+        "id": str(uuid.uuid4()),
+        "user_id": reminder.user_id,
+        "type": "reminder",
+        "title": "Task Reminder",
+        "message": f"{reminder.task_title} is due soon",
+        "task_id": reminder.task_id,
+        "reminder_id": reminder.reminder_id,
+        "created_at": datetime.utcnow().isoformat(),
+        "is_read": False,
+    }
 
-    logger.info(f"In-app notification created for reminder {reminder.reminder_id}")
+    # Persist to Dapr state store for retrieval by the frontend
+    dapr_port = int(os.getenv("DAPR_HTTP_PORT", "3500"))
+    dapr_url = f"http://localhost:{dapr_port}/v1.0/state/postgres-statestore"
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                dapr_url,
+                json=[
+                    {
+                        "key": f"notification:{notification['id']}",
+                        "value": notification,
+                        "metadata": {"ttlInSeconds": "604800"},  # 7 days
+                    }
+                ],
+            )
+            if response.status_code == 204:
+                logger.info(
+                    f"In-app notification {notification['id']} saved to state store"
+                )
+            else:
+                logger.warning(
+                    f"Failed to save notification to state store: {response.status_code}"
+                )
+    except Exception as e:
+        logger.warning(f"Dapr state store unavailable, notification logged only: {e}")
+
+    logger.info(
+        f"In-app notification created for reminder {reminder.reminder_id}: "
+        f"{json.dumps(notification, indent=2)}"
+    )
 
 
 # ================== HEALTH ENDPOINTS ==================

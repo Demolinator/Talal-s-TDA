@@ -105,17 +105,15 @@ class ReminderService:
     async def send_notification(
         self,
         reminder: TaskReminder,
-        kafka_producer=None,
     ) -> None:
         """
         Send notification for a reminder.
 
-        Publishes a Kafka event to the 'reminders' topic for the notification
-        microservice to process. Marks reminder as sent in the database.
+        Publishes an event to the 'reminders' topic via Dapr pub/sub for the
+        notification microservice to process. Marks reminder as sent in the database.
 
         Args:
             reminder: Reminder to send notification for
-            kafka_producer: Kafka producer instance (injected)
 
         Raises:
             HTTPException: 404 if associated task not found
@@ -130,23 +128,20 @@ class ReminderService:
             self.session.commit()
             return
 
-        # Publish Kafka event to 'reminders' topic
-        if kafka_producer:
-            event_data = {
-                "reminder_id": reminder.id,
-                "task_id": task.id,
-                "task_title": task.title,
-                "user_id": task.user_id,
-                "remind_at": reminder.remind_at.isoformat(),
-                "notification_type": reminder.notification_type.value,
-                "timestamp": datetime.utcnow().isoformat(),
-            }
+        # Publish event to 'reminders' topic via Dapr pub/sub
+        from src.events.dapr_publisher import get_event_publisher
 
-            await kafka_producer.publish_event(
-                topic="reminders",
-                event_type="reminder.due",
-                data=event_data,
-            )
+        publisher = await get_event_publisher()
+        event_data = {
+            "reminder_id": reminder.id,
+            "task_id": task.id,
+            "task_title": task.title,
+            "user_id": task.user_id,
+            "remind_at": reminder.remind_at.isoformat(),
+            "notification_type": reminder.notification_type.value,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+        await publisher.publish_reminder_event(event_data)
 
         # Mark reminder as sent
         reminder.is_sent = True
