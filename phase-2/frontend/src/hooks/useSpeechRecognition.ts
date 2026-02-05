@@ -156,16 +156,28 @@ export function useSpeechRecognition(options: SpeechRecognitionOptions = {}) {
       });
 
       recognition.addEventListener("result", (event: any) => {
+        // Access the native event from CustomEvent.detail
+        const nativeEvent = event.detail || event;
+        const results = nativeEvent.results;
+        const resultIndex = nativeEvent.resultIndex ?? 0;
+
+        // Guard against undefined results
+        if (!results || typeof results.length === "undefined") {
+          return;
+        }
+
         let interimText = "";
         let finalText = finalTranscriptRef.current;
 
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const result = event.results[i];
+        for (let i = resultIndex; i < results.length; i++) {
+          const result = results[i];
+          if (!result || !result[0]) continue;
+
           const transcript = result[0].transcript;
 
           if (result.isFinal) {
             finalText += transcript + " ";
-            setConfidence(result[0].confidence);
+            setConfidence(result[0].confidence ?? 0);
           } else {
             interimText += transcript;
           }
@@ -188,6 +200,10 @@ export function useSpeechRecognition(options: SpeechRecognitionOptions = {}) {
 
       recognition.addEventListener("error", (event: any) => {
         setIsListening(false);
+        // Access the native event from CustomEvent.detail
+        const nativeEvent = event.detail || event;
+        const errorCode = nativeEvent.error || "unknown";
+
         const errorMessages: Record<string, string> = {
           "no-speech": "No speech detected. Please try again.",
           "audio-capture": "No microphone found. Please ensure a microphone is connected.",
@@ -195,10 +211,10 @@ export function useSpeechRecognition(options: SpeechRecognitionOptions = {}) {
           "network": "Network error. Please check your connection.",
           "aborted": "Speech recognition was aborted.",
         };
-        const errorMessage = errorMessages[event.error] || event.error;
+        const errorMessage = errorMessages[errorCode] || errorCode;
 
         setError({
-          error: event.error,
+          error: errorCode,
           message: errorMessage,
         });
       });
