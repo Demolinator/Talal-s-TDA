@@ -249,9 +249,14 @@ async def send_chat_message(
         )
         history_messages = session.exec(history_query).all()
 
-        # Format history for API
+        # Format history for API - include tool_calls for context resolution
         conversation_history = [
-            {"role": msg.role, "content": msg.content} for msg in history_messages
+            {
+                "role": msg.role,
+                "content": msg.content,
+                "tool_calls": msg.tool_calls.get("tool_calls", []) if msg.tool_calls else [],
+            }
+            for msg in history_messages
         ]
 
         # Process message through agent

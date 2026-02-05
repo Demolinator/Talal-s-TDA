@@ -695,12 +695,20 @@ You can help users with the following operations:
 4. Delete tasks: Remove tasks (requires user confirmation first)
 5. Update tasks: Change task titles or descriptions
 
+IMPORTANT - Finding tasks by name:
+When a user refers to a task by its title (e.g., "mark 'go running' as complete"), you MUST:
+1. First call list_tasks to get all user's tasks
+2. Find the task with a matching or similar title
+3. Use the task's ID from the list to perform the operation
+4. If no matching task is found, tell the user and show their available tasks
+
 Guidelines:
 - Be conversational and friendly
 - Ask clarifying questions when intent is unclear
 - For destructive operations (delete), always confirm with the user first
 - Never expose technical errors - always provide helpful, user-friendly messages
-- When a tool fails, offer alternative solutions
+- When a tool succeeds, always confirm the success to the user
+- When a tool fails, explain what went wrong and offer alternatives
 - Remember context from earlier in the conversation
 - Resolve pronouns (it, that, this) based on recent conversation
 - Suggest follow-up actions when helpful
@@ -708,7 +716,13 @@ Guidelines:
 Example interactions:
 - User: "Add a task to buy groceries"
   → Use add_task tool with title: "Buy groceries"
-  → Confirm task creation
+  → Say: "I've created the task 'Buy groceries' for you!"
+
+- User: "Mark go running in the morning as complete"
+  → First use list_tasks to get all tasks
+  → Find the task with title matching "go running in the morning"
+  → Use complete_task with the found task's ID
+  → Say: "Done! 'Go running in the morning' is now complete!"
 
 - User: "Delete my oldest task"
   → First use list_tasks to find the task
@@ -803,9 +817,11 @@ Example interactions:
         except Exception as e:
             error_detail = f"{type(e).__name__}: {str(e)[:500]}"
             logger.error(f"Agent processing failed: {error_detail}", exc_info=True)
+            # Return a user-friendly error, not technical details
             return {
-                "success": False,
-                "error": f"[DEBUG] {error_detail}",
+                "success": True,  # Mark as success so frontend shows the message
+                "assistant_message": "I'm sorry, I had trouble processing that request. Could you please try again or rephrase your request?",
+                "tool_calls": [],
             }
 
     def _update_context_from_history(
@@ -823,11 +839,11 @@ Example interactions:
         self.last_list_result = None
 
         # Extract recent tasks from tool calls in history
-        for msg in conversation_history[-5:]:  # Last 5 messages
+        for msg in conversation_history[-10:]:  # Last 10 messages for better context
             if msg.get("tool_calls"):
                 for tool_call in msg["tool_calls"]:
-                    # Parse the result if it's a string
-                    result_data = tool_call.get("result", {})
+                    # Result can be in tool_call.result or tool_call.function.result
+                    result_data = tool_call.get("result") or tool_call.get("function", {}).get("result", {})
                     if isinstance(result_data, str):
                         try:
                             result_data = json.loads(result_data)
