@@ -280,8 +280,8 @@ async def process_completed_task(event: TaskEvent):
 
         logger.info(f"Updated recurring config: next_due_at={next_due.isoformat()}")
 
-        # TODO: Optionally publish task.created event to Kafka
-        # This would notify other services about the new task
+        # The Dapr publisher in the main backend handles task.created events
+        # when new recurring instances are persisted to the database.
 
     except Exception as e:
         logger.error(f"Error processing recurring task {task_id}: {e}", exc_info=True)

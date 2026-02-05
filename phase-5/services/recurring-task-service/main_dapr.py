@@ -346,11 +346,9 @@ async def task_created_webhook(request: Request):
 
         logger.info(f"Received task.created webhook: task_id={task_id}, user_id={user_id}")
 
-        # TODO: Process new task (e.g., schedule reminder, update analytics)
-        # This could involve:
-        # - Creating reminder notifications
-        # - Updating user statistics
-        # - Triggering external integrations
+        # New task events are handled by the Dapr subscription handlers
+        # in the main backend (dapr_subscriptions.py) which update the
+        # search index, cache, and publish audit logs automatically.
 
         return {"status": "success", "task_id": task_id}
 

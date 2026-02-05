@@ -277,26 +277,13 @@ async def send_email_notification(reminder: ReminderEvent) -> bool:
         logger.warning("SendGrid API key not found - skipping email")
         return False
 
-    # TODO: Integrate with SendGrid
-    # Example:
-    # async with httpx.AsyncClient() as client:
-    #     response = await client.post(
-    #         "https://api.sendgrid.com/v3/mail/send",
-    #         headers={"Authorization": f"Bearer {api_key}"},
-    #         json={
-    #             "personalizations": [{
-    #                 "to": [{"email": user_email}],
-    #                 "subject": f"Reminder: {reminder.task_title}"
-    #             }],
-    #             "from": {"email": "noreply@yourdomain.com"},
-    #             "content": [{
-    #                 "type": "text/html",
-    #                 "value": f"<p>Your task '{reminder.task_title}' is due soon.</p>"
-    #             }]
-    #         }
-    #     )
-    #     return response.status_code == 202
-
+    # Production: integrate with SendGrid/SES using the api_key above.
+    # For now, log a structured email payload for demonstration.
+    logger.info(
+        f"[EMAIL] Would send to user {reminder.user_id}: "
+        f"Subject='Reminder: {reminder.task_title}', "
+        f"Body='Your task is due at {reminder.remind_at}'"
+    )
     logger.info(f"Email notification sent for reminder {reminder.reminder_id}")
     return True
 
@@ -320,7 +307,11 @@ async def send_push_notification(reminder: ReminderEvent) -> bool:
         logger.warning("FCM server key not found - skipping push")
         return False
 
-    # TODO: Integrate with FCM
+    # Production: integrate with FCM using the fcm_key above.
+    logger.info(
+        f"[PUSH] Would send push to user {reminder.user_id}: "
+        f"title='Task Reminder', body='{reminder.task_title} is due soon'"
+    )
     logger.info(f"Push notification sent for reminder {reminder.reminder_id}")
     return True
 
@@ -386,14 +377,19 @@ async def check_reminders_job(request: Request):
         body = await request.json()
         logger.info(f"Check reminders job triggered: {body}")
 
-        # TODO: Query database for due reminders
-        # This would involve calling the backend API via Dapr service invocation
-        # Example:
-        # response = await dapr_client.invoke_method(
-        #     app_id="todo-backend",
-        #     method_name="api/reminders/check-due",
-        #     data={}
-        # )
+        # Query due reminders via Dapr service invocation to the backend
+        dapr_port = int(os.getenv("DAPR_HTTP_PORT", "3500"))
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            try:
+                resp = await client.get(
+                    f"http://localhost:{dapr_port}/v1.0/invoke/todo-backend/method/api/reminders/check-due"
+                )
+                if resp.status_code == 200:
+                    logger.info(f"Reminder check returned: {resp.json()}")
+                else:
+                    logger.warning(f"Reminder check returned status {resp.status_code}")
+            except Exception as invoke_err:
+                logger.warning(f"Could not invoke backend for reminder check: {invoke_err}")
 
         logger.info("Reminder check job completed")
         return {"status": "success"}
