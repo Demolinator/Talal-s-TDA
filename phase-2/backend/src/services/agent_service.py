@@ -931,10 +931,58 @@ Example flow with memory:
                                 break
 
                     if matched_task:
-                        # Ask what they want to update
+                        # Try to extract what to update from the message
+                        new_title = None
+                        new_description = None
+
+                        # Extract new title patterns
+                        title_patterns = [
+                            r"(?:change|rename|update).*?(?:title|name|task)?\s*(?:to|as)\s+['\"]?([^'\"]+?)['\"]?(?:\s+(?:and|with|,)|$)",
+                            r"(?:to|as)\s+['\"]?(.+?)['\"]?\s+task",
+                            r"title\s*(?:to|:)\s*['\"]?([^'\"]+)['\"]?",
+                        ]
+                        for pattern in title_patterns:
+                            match = re.search(pattern, user_message, re.IGNORECASE)
+                            if match:
+                                new_title = match.group(1).strip().strip('"\'')
+                                break
+
+                        # Extract description patterns
+                        desc_patterns = [
+                            r"description\s*(?:to|:)\s*['\"]?([^'\"]+)['\"]?",
+                            r"(?:and\s+)?description\s+['\"]?([^'\"]+)['\"]?",
+                        ]
+                        for pattern in desc_patterns:
+                            match = re.search(pattern, user_message, re.IGNORECASE)
+                            if match:
+                                new_description = match.group(1).strip().strip('"\'')
+                                break
+
+                        # If we found something to update, do it
+                        if new_title or new_description:
+                            update_result = mcp_service.update_task(
+                                user_id=user_id,
+                                task_id=uuid.UUID(matched_task["id"]),
+                                title=new_title,
+                                description=new_description,
+                            )
+                            if update_result.get("success"):
+                                updated_task = update_result["task"]
+                                changes = []
+                                if new_title:
+                                    changes.append(f"title to **\"{new_title}\"**")
+                                if new_description:
+                                    changes.append(f"description to \"{new_description}\"")
+                                return {
+                                    "success": True,
+                                    "assistant_message": f"Done! I've updated the task:\n- Changed {' and '.join(changes)}\n\nAnything else you'd like to change?",
+                                    "tool_calls": [{"id": str(uuid.uuid4()), "name": "update_task", "result": update_result}],
+                                }
+
+                        # Couldn't parse what to update, ask for clarification
                         return {
                             "success": True,
-                            "assistant_message": f"What would you like to update for **\"{matched_task['title']}\"**?\n\nYou can:\n- Change the title\n- Add or update the description\n- Mark it as complete or incomplete",
+                            "assistant_message": f"I found **\"{matched_task['title']}\"**. What would you like to change?\n\nExamples:\n- \"Change title to Go to Gym\"\n- \"Update description to I need to exercise\"\n- \"Mark as complete\"",
                             "tool_calls": [{"id": str(uuid.uuid4()), "name": "list_tasks", "result": result}],
                         }
                     else:
@@ -942,15 +990,29 @@ Example flow with memory:
                         task_list = "\n".join([f"• {t['title']}" for t in tasks[:5]])
                         return {
                             "success": True,
-                            "assistant_message": f"Which task would you like to update?\n\n{task_list}\n\nPlease tell me the task name and what you'd like to change.",
+                            "assistant_message": f"Which task would you like to update?\n\n{task_list}\n\nTry: \"Change [task name] title to [new title]\"",
                             "tool_calls": [{"id": str(uuid.uuid4()), "name": "list_tasks", "result": result}],
                         }
 
             elif intent == "unknown":
                 # For unknown intents, provide helpful response
+                # Note: This is fallback mode, indicate reduced capability
                 return {
                     "success": True,
-                    "assistant_message": "I can help you with:\n• **Add a task**: \"Add task buy groceries\"\n• **Show tasks**: \"Show my tasks\"\n• **Complete**: \"Mark buy groceries as complete\"\n• **Delete**: \"Delete the buy groceries task\"\n• **Update**: \"Update the task title\"\n\nWhat would you like to do?",
+                    "assistant_message": "I'm currently in basic mode. Here's what I can help with:\n\n• **Add**: \"Add task [name]\"\n• **List**: \"Show my tasks\"\n• **Complete**: \"Complete [task name]\"\n• **Delete**: \"Delete [task name]\"\n• **Update**: \"Change [task name] title to [new title]\"\n\nPlease use simple, direct commands.",
+                    "tool_calls": [],
+                }
+
+            # Handle greetings and conversation in fallback
+            greetings = ["hello", "hi", "hey", "good morning", "good afternoon", "good evening"]
+            if any(g in user_message.lower() for g in greetings):
+                # Extract name if mentioned
+                name_match = re.search(r"(?:my name is|i'm|i am)\s+([A-Za-z]+)", user_message, re.IGNORECASE)
+                name = name_match.group(1) if name_match else ""
+                greeting_response = f"Hello{' ' + name if name else ''}! " if name else "Hello! "
+                return {
+                    "success": True,
+                    "assistant_message": f"{greeting_response}I'm your task assistant. I can help you add, view, complete, update, or delete tasks. What would you like to do?",
                     "tool_calls": [],
                 }
 
