@@ -16,10 +16,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Optional
 
-import os
-
-from agents import Agent, ModelProvider, OpenAIChatCompletionsModel, RunConfig, RunContextWrapper, Runner, function_tool
-from openai import AsyncOpenAI
+from agents import Agent, RunConfig, RunContextWrapper, Runner, function_tool
 from sqlmodel import Session
 
 from src.models.conversation import Message
@@ -649,21 +646,8 @@ class ErrorHandler:
 # AGENT SERVICE
 # ============================================================================
 
-class GeminiModelProvider(ModelProvider):
-    """Custom model provider that routes to Google Gemini via its OpenAI-compatible API."""
-
-    def __init__(self):
-        api_key = os.environ.get("GEMINI_API_KEY", "")
-        self.client = AsyncOpenAI(
-            api_key=api_key,
-            base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
-        )
-
-    def get_model(self, model_name: str | None) -> OpenAIChatCompletionsModel:
-        return OpenAIChatCompletionsModel(
-            model=model_name or AgentService.MODEL,
-            openai_client=self.client,
-        )
+# OpenAI is used directly via OPENAI_API_KEY environment variable
+# No custom provider needed - the SDK handles it automatically
 
 
 class AgentService:
@@ -681,9 +665,9 @@ class AgentService:
     Based on Phase III Agent Behavior Specification.
     """
 
-    # Agent configuration — uses Gemini via OpenAI-compatible API
-    # gemini-2.0-flash has higher rate limits than gemini-2.5-flash-lite
-    MODEL = "gemini-2.0-flash"
+    # Agent configuration — uses OpenAI directly
+    # gpt-4o-mini is fast and cost-effective ($0.15/1M input tokens)
+    MODEL = "gpt-4o-mini"
     TEMPERATURE = 0.7
 
     # System prompt for the agent
@@ -753,10 +737,8 @@ Example interactions:
             model=self.MODEL,
         )
 
-        # Configure Gemini as the model provider
-        self.run_config = RunConfig(
-            model_provider=GeminiModelProvider(),
-        )
+        # Use default OpenAI provider (reads OPENAI_API_KEY from environment)
+        self.run_config = RunConfig()
 
         # Conversation context state
         self.recent_tasks: list[dict] = []  # Recently mentioned tasks
