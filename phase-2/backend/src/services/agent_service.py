@@ -929,11 +929,29 @@ Example interactions:
         # Reset context
         self.recent_tasks = []
         self.last_list_result = None
+        self.pending_confirmation = None
 
         # Extract recent tasks from tool calls in history
         for msg in conversation_history[-10:]:  # Last 10 messages for better context
             if msg.get("tool_calls"):
                 for tool_call in msg["tool_calls"]:
+                    # Check for pending confirmation marker
+                    tool_name = tool_call.get("name") or tool_call.get("function", {}).get("name", "")
+                    if tool_name == "pending_delete_confirmation":
+                        # Restore pending confirmation from history
+                        result_data = tool_call.get("result") or tool_call.get("function", {}).get("result", {})
+                        if isinstance(result_data, str):
+                            try:
+                                result_data = json.loads(result_data)
+                            except json.JSONDecodeError:
+                                continue
+                        self.pending_confirmation = {
+                            "tool": "delete_task",
+                            "task_id": result_data.get("task_id"),
+                            "task_title": result_data.get("task_title"),
+                        }
+                        continue
+
                     # Result can be in tool_call.result or tool_call.function.result
                     result_data = tool_call.get("result") or tool_call.get("function", {}).get("result", {})
                     if isinstance(result_data, str):
@@ -979,53 +997,62 @@ Example interactions:
         Returns:
             Response requesting confirmation or executing deletion
         """
-        # Use the agent to identify the task
-        context = AgentContext(
-            session=self.session,
-            user_id=user_id,
-            recent_tasks=self.recent_tasks,
-            last_list_result=self.last_list_result,
-            pending_confirmation=None,
-        )
+        # First, get user's tasks to find the one they want to delete
+        mcp_service = MCPToolsService(self.session)
+        tasks_result = mcp_service.list_tasks(user_id=user_id)
 
-        # Add context hint for pronoun resolution
-        enhanced_message = user_message
-        if ParameterExtractor.contains_pronoun(user_message):
-            context_hint = f"\n\nContext - Recent tasks: {json.dumps(self.recent_tasks, indent=2)}"
-            enhanced_message += context_hint
+        if not tasks_result.get("success") or not tasks_result.get("tasks"):
+            return {
+                "success": True,
+                "assistant_message": "You don't have any tasks to delete. Would you like to create one?",
+                "tool_calls": [],
+            }
 
-        # Run agent to identify task and get confirmation
-        result = await Runner.run(
-            starting_agent=self.agent,
-            input=f"""User wants to delete a task. Their message: "{user_message}"
+        tasks = tasks_result["tasks"]
+        user_msg_lower = user_message.lower()
 
-To help them, I need to:
-1. Identify which task they want to delete
-2. Ask for confirmation with the task name
+        # Try to find the task by name match
+        matched_task = None
+        for task in tasks:
+            task_title_lower = task["title"].lower()
+            # Check if task title is mentioned in the message
+            if task_title_lower in user_msg_lower:
+                matched_task = task
+                break
 
-Available context - recent tasks: {json.dumps(self.recent_tasks, indent=2)}
-Last task list: {json.dumps(self.last_list_result, indent=2) if self.last_list_result else "None"}
+        # Also check recent_tasks for pronoun resolution ("this task", "that one")
+        if not matched_task and self.recent_tasks:
+            if any(p in user_msg_lower for p in ["this", "that", "it"]):
+                # Use the most recently mentioned task
+                recent_task_id = self.recent_tasks[-1].get("task_id")
+                for task in tasks:
+                    if task["id"] == recent_task_id:
+                        matched_task = task
+                        break
 
-First, use list_tasks to see their tasks. Then tell me which task they want to delete by saying "The user wants to delete [task title]".""",
-            context=context,
-            run_config=self.run_config,
-        )
+        if not matched_task:
+            # Couldn't identify task, ask user to specify
+            task_list = "\n".join([f"- **{t['title']}**" for t in tasks])
+            return {
+                "success": True,
+                "assistant_message": f"Which task would you like to delete?\n\n{task_list}\n\nPlease tell me the task name.",
+                "tool_calls": [],
+            }
 
-        response_content = result.final_output
-
-        # Try to extract task info from the response
-        # This is a simplified approach - the agent should identify the task
-        # For now, we'll return a confirmation request
-        self.pending_confirmation = {
-            "tool": "delete_task",
-            "user_message": user_message,
-            "context": context,
-        }
-
+        # Found the task, ask for confirmation and store pending confirmation in tool_calls
+        # This will be persisted to DB and restored on next message
         return {
             "success": True,
-            "assistant_message": response_content,
-            "tool_calls": [],
+            "assistant_message": f"Are you sure you want to delete the task **\"{matched_task['title']}\"**? This cannot be undone. Reply 'yes' to confirm or 'no' to cancel.",
+            "tool_calls": [{
+                "id": str(uuid.uuid4()),
+                "name": "pending_delete_confirmation",
+                "result": {
+                    "task_id": matched_task["id"],
+                    "task_title": matched_task["title"],
+                    "awaiting_confirmation": True,
+                },
+            }],
             "requires_confirmation": True,
         }
 
@@ -1054,50 +1081,73 @@ First, use list_tasks to see their tasks. Then tell me which task they want to d
         confirmed = ConfirmationFlow.parse_confirmation(user_response)
 
         if confirmed is None:
+            # Ambiguous response - keep the pending confirmation and ask again
+            task_title = self.pending_confirmation.get("task_title", "the task")
             return {
                 "success": True,
-                "assistant_message": "Please say 'yes' or 'no'.",
-                "tool_calls": [],
+                "assistant_message": f"I need a clear answer. Do you want to delete **\"{task_title}\"**? Please reply 'yes' or 'no'.",
+                "tool_calls": [{
+                    "id": str(uuid.uuid4()),
+                    "name": "pending_delete_confirmation",
+                    "result": {
+                        "task_id": self.pending_confirmation.get("task_id"),
+                        "task_title": task_title,
+                        "awaiting_confirmation": True,
+                    },
+                }],
                 "requires_confirmation": True,
             }
 
         if not confirmed:
             # User declined - clear pending
-            self.pending_confirmation = None
             return {
                 "success": True,
-                "assistant_message": (
-                    "No problem! We'll keep that task. "
-                    "Is there anything else I can help with?"
-                ),
+                "assistant_message": "No problem! I've kept the task. Is there anything else I can help with?",
                 "tool_calls": [],
             }
 
-        # User confirmed - execute pending operation using agent
-        pending = self.pending_confirmation
-        self.pending_confirmation = None
+        # User confirmed - execute deletion directly using the stored task_id
+        task_id = self.pending_confirmation.get("task_id")
+        task_title = self.pending_confirmation.get("task_title", "the task")
 
-        # Run agent with confirmation
-        context = AgentContext(
-            session=self.session,
-            user_id=user_id,
-            recent_tasks=self.recent_tasks,
-            last_list_result=self.last_list_result,
-            pending_confirmation=None,
-        )
+        if not task_id:
+            return {
+                "success": True,
+                "assistant_message": "Sorry, I lost track of which task to delete. Could you please tell me again?",
+                "tool_calls": [],
+            }
 
-        result = await Runner.run(
-            starting_agent=self.agent,
-            input=f"The user has confirmed they want to delete a task. Their original message was: '{pending['user_message']}'. Please proceed with deleting the task they identified.",
-            context=context,
-            run_config=self.run_config,
-        )
+        # Execute the deletion
+        mcp_service = MCPToolsService(self.session)
+        try:
+            result = mcp_service.delete_task(
+                user_id=user_id,
+                task_id=uuid.UUID(task_id),
+            )
 
-        return {
-            "success": True,
-            "assistant_message": result.final_output,
-            "tool_calls": [],
-        }
+            if result.get("success"):
+                return {
+                    "success": True,
+                    "assistant_message": f"Done! I've deleted **\"{task_title}\"**. Is there anything else you'd like me to help with?",
+                    "tool_calls": [{
+                        "id": str(uuid.uuid4()),
+                        "name": "delete_task",
+                        "result": result,
+                    }],
+                }
+            else:
+                return {
+                    "success": True,
+                    "assistant_message": f"Sorry, I couldn't delete the task: {result.get('error', 'Unknown error')}",
+                    "tool_calls": [],
+                }
+        except Exception as e:
+            logger.error(f"Failed to delete task: {e}")
+            return {
+                "success": True,
+                "assistant_message": "Sorry, something went wrong while deleting the task. Please try again.",
+                "tool_calls": [],
+            }
 
     async def _process_with_agent(
         self,
