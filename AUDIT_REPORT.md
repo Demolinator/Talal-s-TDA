@@ -82,7 +82,7 @@ AUTH_SERVER_URL = os.getenv("AUTH_SERVER_URL", "http://localhost:3001")
 
 | Variable | Required Value | Purpose |
 |----------|---------------|---------|
-| `CORS_ORIGINS` | `https://frontend-peach-xi-69.vercel.app` | Allow frontend API requests |
+| `CORS_ORIGINS` | `https://talal-s-tda.vercel.app` | Allow frontend API requests |
 | `AUTH_SERVER_URL` | `https://auth-server-production-8251.up.railway.app` | Better Auth server |
 | `DATABASE_URL` | `postgresql://...?sslmode=require` | Neon database |
 | `JWT_SECRET` | (existing value) | JWT token signing |
@@ -119,7 +119,7 @@ AUTH_SERVER_URL = os.getenv("AUTH_SERVER_URL", "http://localhost:3001")
 3. Go to "Variables" tab
 4. **VERIFY** these variables:
    ```
-   CORS_ORIGINS=https://frontend-peach-xi-69.vercel.app
+   CORS_ORIGINS=https://talal-s-tda.vercel.app
    AUTH_SERVER_URL=https://auth-server-production-8251.up.railway.app
    DATABASE_URL=postgresql://...?sslmode=require
    JWT_SECRET=(your secret)
@@ -134,7 +134,7 @@ cd phase-2/backend
 railway service
 
 # Set variables (if needed)
-railway variables set CORS_ORIGINS="https://frontend-peach-xi-69.vercel.app"
+railway variables set CORS_ORIGINS="https://talal-s-tda.vercel.app"
 railway variables set AUTH_SERVER_URL="https://auth-server-production-8251.up.railway.app"
 
 # Check logs to verify
@@ -144,7 +144,7 @@ railway logs
 ### Step 2: Clear Browser Cache (CRITICAL)
 
 **Complete Cache Clear**:
-1. **Close ALL tabs** with `frontend-peach-xi-69.vercel.app`
+1. **Close ALL tabs** with `talal-s-tda.vercel.app`
 2. Press **Ctrl + Shift + Delete** (Windows) or **Cmd + Shift + Delete** (Mac)
 3. Select:
    - ✅ Browsing history
@@ -191,7 +191,7 @@ This ensures:
 
 **Backend Logs Should Show**:
 ```
-INFO:root:CORS Origins configured: ['https://frontend-peach-xi-69.vercel.app']
+INFO:root:CORS Origins configured: ['https://talal-s-tda.vercel.app']
 INFO:root:🔗 Backend using AUTH_SERVER_URL: https://auth-server-production-8251.up.railway.app
 ```
 

@@ -196,7 +196,7 @@ NEXT_PUBLIC_ENVIRONMENT=development
 DATABASE_URL=postgresql://neondb_owner:...@ep-solitary-morning-a4vdcuab-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require
 AUTH_SERVER_URL=http://localhost:3001
 JWT_SECRET=cbdca7cd62ff75aa5d8460c94dd5dc5ed3a1366629a701576e5a80df207b4801
-CORS_ORIGINS=http://localhost:3000,https://frontend-peach-xi-69.vercel.app
+CORS_ORIGINS=http://localhost:3000,https://talal-s-tda.vercel.app
 ENVIRONMENT=production
 ```
 
@@ -298,7 +298,7 @@ npm run dev  # Port 3000
 
 **Auth Server**: Railway (https://auth-server-production-8251.up.railway.app)
 **Backend**: Railway (https://talal-s-tda-production.up.railway.app)
-**Frontend**: Vercel (https://frontend-peach-xi-69.vercel.app)
+**Frontend**: Vercel (https://talal-s-tda.vercel.app)
 
 **Environment Variables**:
 - Frontend `NEXT_PUBLIC_API_URL` → Backend Railway URL

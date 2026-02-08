@@ -315,7 +315,7 @@ Once both fixed:
 
 **Usage Example**:
 ```bash
-Use the Playwright Workflow Tester skill to test the full workflow at https://frontend-peach-xi-69.vercel.app
+Use the Playwright Workflow Tester skill to test the full workflow at https://talal-s-tda.vercel.app
 ```
 
 ### 3. Backend Fixes (Committed & Deployed)
@@ -448,7 +448,7 @@ All backend code has comprehensive docstrings:
 ## 📞 Contact and Support
 
 **Repository**: https://github.com/Demolinator/Talal-s-TDA
-**Frontend**: https://frontend-peach-xi-69.vercel.app
+**Frontend**: https://talal-s-tda.vercel.app
 **Backend**: https://tda-backend-production.up.railway.app
 **Database**: Neon PostgreSQL (shared)
 

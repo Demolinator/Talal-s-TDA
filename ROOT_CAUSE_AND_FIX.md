@@ -69,7 +69,7 @@ Now the code will:
 
 **Commit**: `c8c89b9` "Fix: Use environment variables for API URLs instead of hardcoding"
 **Deployment**: https://frontend-789ejoxi3-talal-ahmeds-projects.vercel.app
-**Alias**: https://frontend-peach-xi-69.vercel.app ✅
+**Alias**: https://talal-s-tda.vercel.app ✅
 **Build Time**: 36 seconds
 **Status**: SUCCESS
 
@@ -99,7 +99,7 @@ BETTER_AUTH_SECRET=cbdca7cd62ff75aa5d8460c94dd5dc5ed3a1366629a701576e5a80df207b4
 - Browser might still have old bundles cached
 
 **Steps:**
-1. Close ALL tabs with `frontend-peach-xi-69.vercel.app`
+1. Close ALL tabs with `talal-s-tda.vercel.app`
 2. Press **Ctrl + Shift + Delete**
 3. Select **ALL** (Browsing history, Cookies, Cached images and files)
 4. Time range: **"All time"**
@@ -110,7 +110,7 @@ BETTER_AUTH_SECRET=cbdca7cd62ff75aa5d8460c94dd5dc5ed3a1366629a701576e5a80df207b4
 ### Test in Incognito Window:
 
 ```
-https://frontend-peach-xi-69.vercel.app/dashboard
+https://talal-s-tda.vercel.app/dashboard
 ```
 
 ---
@@ -129,7 +129,7 @@ https://frontend-peach-xi-69.vercel.app/dashboard
 If you see:
 ```
 Access to fetch at 'https://tda-backend-production.up.railway.app/api/tasks'
-from origin 'https://frontend-peach-xi-69.vercel.app' has been blocked by CORS policy
+from origin 'https://talal-s-tda.vercel.app' has been blocked by CORS policy
 ```
 
 This means:
@@ -140,7 +140,7 @@ This means:
 1. Go to Railway: https://railway.app/project/1a580b9d-e43b-4faf-a523-b3454b9d3bf1
 2. Click "tda-backend-production"
 3. Click "Variables"
-4. Set: `CORS_ORIGINS=https://frontend-peach-xi-69.vercel.app`
+4. Set: `CORS_ORIGINS=https://talal-s-tda.vercel.app`
 5. Click "Deploy"
 
 ---

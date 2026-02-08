@@ -56,7 +56,7 @@ I've created **three comprehensive automation skills** for your full-stack todo 
 **Method 1: Direct Command (Future)**
 ```bash
 # Once skills are registered in Claude Code
-/browser-test-auth --url https://frontend-peach-xi-69.vercel.app
+/browser-test-auth --url https://talal-s-tda.vercel.app
 /railway-deploy --service backend --action deploy
 /e2e-workflow --workflow deploy-test
 ```
@@ -86,7 +86,7 @@ Claude: [Orchestrates complete workflow]
 You: "Use browser-test-auth skill to test my production frontend"
 
 Claude will:
-1. Navigate to https://frontend-peach-xi-69.vercel.app/login
+1. Navigate to https://talal-s-tda.vercel.app/login
 2. Fill login form with test credentials
 3. Click sign-in button
 4. Capture network traffic

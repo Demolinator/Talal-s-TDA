@@ -271,7 +271,7 @@ NEXT_PUBLIC_ENVIRONMENT=development
 DATABASE_URL=postgresql://neondb_owner:...@ep-solitary-morning-a4vdcuab-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require
 AUTH_SERVER_URL=http://localhost:3001
 JWT_SECRET=cbdca7cd62ff75aa5d8460c94dd5dc5ed3a1366629a701576e5a80df207b4801
-CORS_ORIGINS=http://localhost:3000,https://frontend-peach-xi-69.vercel.app
+CORS_ORIGINS=http://localhost:3000,https://talal-s-tda.vercel.app
 ENVIRONMENT=production
 ```
 
@@ -363,7 +363,7 @@ railway up
 # DATABASE_URL=<neon-connection-string>
 # AUTH_SERVER_URL=https://auth-server-production-8251.up.railway.app
 # JWT_SECRET=<same-as-auth-server>
-# CORS_ORIGINS=https://frontend-peach-xi-69.vercel.app
+# CORS_ORIGINS=https://talal-s-tda.vercel.app
 # ENVIRONMENT=production
 ```
 

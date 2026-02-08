@@ -57,7 +57,7 @@ if (options?.headers) {
 ## Deployment Details
 
 ### Production URLs
-- **Primary**: https://frontend-peach-xi-69.vercel.app
+- **Primary**: https://talal-s-tda.vercel.app
 - **Preview**: https://frontend-8yna1awg4-talal-ahmeds-projects.vercel.app
 - **Alternate**: https://frontend-talal-ahmeds-projects.vercel.app
 
@@ -171,7 +171,7 @@ e56998d (HEAD -> main) fix: resolve TypeScript HeadersInit type error in API cli
 
 ### Recommended Actions
 1. **Test Authentication Flow**:
-   - Visit https://frontend-peach-xi-69.vercel.app/login
+   - Visit https://talal-s-tda.vercel.app/login
    - Sign in with test credentials
    - Verify JWT token is stored in localStorage
    - Check browser console for debug logs ("SIGNIN RESPONSE", "Token found")
@@ -198,7 +198,7 @@ e56998d (HEAD -> main) fix: resolve TypeScript HeadersInit type error in API cli
 
 1. **Check localStorage**:
    ```javascript
-   // In browser console at https://frontend-peach-xi-69.vercel.app
+   // In browser console at https://talal-s-tda.vercel.app
    console.log(localStorage.getItem('auth_token'));
    ```
 
@@ -236,7 +236,7 @@ e56998d (HEAD -> main) fix: resolve TypeScript HeadersInit type error in API cli
 ### Environment Variables (Vercel)
 ```env
 NEXT_PUBLIC_API_URL=https://tda-backend-production.up.railway.app
-NEXT_PUBLIC_BETTER_AUTH_URL=https://frontend-peach-xi-69.vercel.app
+NEXT_PUBLIC_BETTER_AUTH_URL=https://talal-s-tda.vercel.app
 BETTER_AUTH_SECRET=[redacted]
 ```
 
@@ -277,7 +277,7 @@ Deploying talal-ahmeds-projects/frontend
 ✓ Deployment completed [40s]
 ✓ Production alias assigned
 
-Production: https://frontend-peach-xi-69.vercel.app
+Production: https://talal-s-tda.vercel.app
 ```
 
 ---
@@ -287,7 +287,7 @@ Production: https://frontend-peach-xi-69.vercel.app
 **Status**: DEPLOYMENT SUCCESSFUL
 **Build**: ✅ Passed
 **Type Check**: ✅ Passed
-**Production URL**: https://frontend-peach-xi-69.vercel.app
+**Production URL**: https://talal-s-tda.vercel.app
 **Latest Commit**: `e56998d` (TypeScript fix)
 **Previous Commit**: `86cbc83` (JWT extraction)
 

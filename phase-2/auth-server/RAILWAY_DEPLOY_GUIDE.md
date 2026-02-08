@@ -59,7 +59,7 @@ https://${{RAILWAY_PUBLIC_DOMAIN}}
 
 **CORS_ORIGINS**
 ```
-https://frontend-peach-xi-69.vercel.app
+https://talal-s-tda.vercel.app
 ```
 This is your deployed Vercel frontend URL.
 
@@ -115,7 +115,7 @@ Expected response:
 
 ### Test Authentication Flow
 
-1. Visit your Vercel frontend: https://frontend-peach-xi-69.vercel.app
+1. Visit your Vercel frontend: https://talal-s-tda.vercel.app
 2. Click **"Sign Up"**
 3. Create a new account
 4. Verify you're redirected to the dashboard
@@ -182,6 +182,6 @@ If you encounter issues:
 | DATABASE_URL | `postgresql://...` | From Neon dashboard |
 | BETTER_AUTH_SECRET | `ajRphFFR4XJ5aIM1q2PRtjq31pTTnWKeYjzmBk0e50g=` | Pre-generated |
 | BETTER_AUTH_URL | `https://${{RAILWAY_PUBLIC_DOMAIN}}` | Auto-populated |
-| CORS_ORIGINS | `https://frontend-peach-xi-69.vercel.app` | Vercel frontend |
+| CORS_ORIGINS | `https://talal-s-tda.vercel.app` | Vercel frontend |
 | PORT | `3001` | Must match Dockerfile |
 | NODE_ENV | `production` | Standard |

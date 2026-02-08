@@ -19,7 +19,7 @@
 ## Step 2: Open in Incognito Mode
 
 1. Press `Ctrl + Shift + N` (Chrome) or `Ctrl + Shift + P` (Firefox)
-2. Go to: `https://frontend-peach-xi-69.vercel.app/dashboard`
+2. Go to: `https://talal-s-tda.vercel.app/dashboard`
 
 ## Step 3: Open DevTools BEFORE Page Loads
 

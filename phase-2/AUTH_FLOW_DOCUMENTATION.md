@@ -300,7 +300,7 @@ BETTER_AUTH_SECRET=cbdca7cd62ff75aa5d8460c94dd5dc5ed3a1366629a701576e5a80df207b4
 BETTER_AUTH_URL=https://auth-server-production-8251.up.railway.app
 PORT=3001
 NODE_ENV=production
-CORS_ORIGINS=http://localhost:3000,https://frontend-peach-xi-69.vercel.app
+CORS_ORIGINS=http://localhost:3000,https://talal-s-tda.vercel.app
 ```
 
 ### Backend (.env)
@@ -309,7 +309,7 @@ DATABASE_URL=postgresql://...?sslmode=require&channel_binding=require
 JWT_SECRET=cbdca7cd62ff75aa5d8460c94dd5dc5ed3a1366629a701576e5a80df207b4801
 JWT_ALGORITHM=HS256
 AUTH_SERVER_URL=https://auth-server-production-8251.up.railway.app
-CORS_ORIGINS=http://localhost:3000,https://frontend-peach-xi-69.vercel.app
+CORS_ORIGINS=http://localhost:3000,https://talal-s-tda.vercel.app
 ```
 
 ### Frontend (.env.local)

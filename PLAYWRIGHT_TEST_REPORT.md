@@ -23,7 +23,7 @@
 **Duration**: 2.5s
 
 **Steps**:
-1. Navigate to https://frontend-peach-xi-69.vercel.app
+1. Navigate to https://talal-s-tda.vercel.app
 2. Verify page loads successfully
 3. Verify page title and content
 
@@ -172,7 +172,7 @@ curl https://auth-server-production-8251.up.railway.app/health
 ## Infrastructure Status
 
 ### Frontend (Vercel)
-- **URL**: https://frontend-peach-xi-69.vercel.app
+- **URL**: https://talal-s-tda.vercel.app
 - **Status**: ✅ HEALTHY
 - **Deployment**: Latest code deployed
 - **Performance**: Fast page loads (~2s)
@@ -260,7 +260,7 @@ curl https://auth-server-production-8251.up.railway.app/health
 **Timeout**: 30 seconds per action
 
 **URLs Tested**:
-- Frontend: https://frontend-peach-xi-69.vercel.app
+- Frontend: https://talal-s-tda.vercel.app
 - Backend: https://tda-backend-production.up.railway.app
 - Auth-Server: https://auth-server-production-8251.up.railway.app
 

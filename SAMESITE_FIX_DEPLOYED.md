@@ -3,7 +3,7 @@
 ## 🎯 The Root Cause (Finally Found!)
 
 Your frontend and backend are on **different domains**:
-- **Frontend**: `frontend-peach-xi-69.vercel.app`
+- **Frontend**: `talal-s-tda.vercel.app`
 - **Backend**: `tda-backend-production.up.railway.app`
 
 The backend was setting cookies with **`SameSite=Lax`**, which **blocks cookies from being sent in cross-domain requests**.
@@ -65,7 +65,7 @@ response.set_cookie(
 ### Step 2: Test in Fresh Incognito Window
 
 1. Open **Incognito/Private Window** (Ctrl + Shift + N)
-2. Navigate to: `https://frontend-peach-xi-69.vercel.app/login`
+2. Navigate to: `https://talal-s-tda.vercel.app/login`
 3. **Open DevTools** (F12) → **Network** tab
 4. **Clear all requests** (🚫 icon)
 

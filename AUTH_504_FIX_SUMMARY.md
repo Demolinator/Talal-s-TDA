@@ -63,7 +63,7 @@ Added backend URL to trusted origins:
 trustedOrigins: [
   "http://localhost:3000",
   "http://127.0.0.1:3000",
-  "https://frontend-peach-xi-69.vercel.app",
+  "https://talal-s-tda.vercel.app",
   "https://tda-backend-production.up.railway.app", // Backend can call auth server
 ],
 ```
@@ -140,7 +140,7 @@ While in Railway Variables tab, **verify these are set correctly**:
 AUTH_SERVER_URL=https://auth-server-production-8251.up.railway.app (MUST ADD THIS!)
 DATABASE_URL=postgresql://... (should already be set)
 JWT_SECRET=... (should match BETTER_AUTH_SECRET in auth server)
-CORS_ORIGINS=http://localhost:3000,https://frontend-peach-xi-69.vercel.app
+CORS_ORIGINS=http://localhost:3000,https://talal-s-tda.vercel.app
 ENVIRONMENT=production
 ```
 
@@ -149,7 +149,7 @@ ENVIRONMENT=production
 DATABASE_URL=postgresql://... (should already be set)
 BETTER_AUTH_SECRET=... (should match JWT_SECRET in backend)
 BETTER_AUTH_URL=https://auth-server-production-8251.up.railway.app
-CORS_ORIGINS=http://localhost:3000,https://frontend-peach-xi-69.vercel.app,https://tda-backend-production.up.railway.app
+CORS_ORIGINS=http://localhost:3000,https://talal-s-tda.vercel.app,https://tda-backend-production.up.railway.app
 NODE_ENV=production
 ```
 
@@ -170,7 +170,7 @@ Monitor Railway dashboard:
 ```
 ✅ PostgreSQL connection successful
 ✅ Better Auth initialized successfully
-🌐 CORS Origins: http://localhost:3000,https://frontend-peach-xi-69.vercel.app,https://tda-backend-production.up.railway.app
+🌐 CORS Origins: http://localhost:3000,https://talal-s-tda.vercel.app,https://tda-backend-production.up.railway.app
 ✅ Better Auth server started successfully
 ```
 
@@ -204,7 +204,7 @@ curl -X POST https://tda-backend-production.up.railway.app/api/auth/sign-in/emai
 Expected: `200 OK` (NOT 504 timeout!)
 
 **4. Test Frontend Login**:
-1. Go to https://frontend-peach-xi-69.vercel.app/login
+1. Go to https://talal-s-tda.vercel.app/login
 2. Email: `test@example.com`
 3. Password: `password123`
 4. Click "Sign In"

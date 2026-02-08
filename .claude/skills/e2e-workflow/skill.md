@@ -149,7 +149,7 @@ Phase 4: Notify Team
 ### Production Environment
 ```yaml
 frontend:
-  url: https://frontend-peach-xi-69.vercel.app
+  url: https://talal-s-tda.vercel.app
   platform: Vercel
   deploy_command: vercel --prod
 
@@ -224,7 +224,7 @@ database:
     "integration_tests": "PASS"
   },
   "urls": {
-    "frontend": "https://frontend-peach-xi-69.vercel.app",
+    "frontend": "https://talal-s-tda.vercel.app",
     "backend": "https://tda-backend-production.up.railway.app",
     "auth_server": "https://auth-server-production-8251.up.railway.app"
   }

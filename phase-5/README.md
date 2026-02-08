@@ -1,34 +1,46 @@
 # Phase V: Cloud-Native Deployment & Advanced Features
 
-**Status**: Implemented (scaffolded for cloud deployment)
+**Status**: ✅ Complete (100%)
 
 ---
 
 ## Overview
 
-Phase V extends the Todo application with advanced features and cloud-native architecture using Dapr, Kafka, and event-driven patterns.
+Phase V extends the Todo application with advanced task features and cloud-native architecture using Dapr, Kafka, and event-driven microservices.
 
 ---
 
-## Advanced Features Implemented
+## Advanced Features
 
 ### Task Management
-- **Recurring Tasks** - Frequency-based task repetition (daily, weekly, monthly, custom cron)
-- **Due Dates & Reminders** - Schedule reminders with in-app, email, and push notification types
-- **Priorities** - LOW, MEDIUM, HIGH priority levels with sorting
-- **Categories/Tags** - User-defined categories with color coding
-- **Search & Filter** - Full-text search by keyword, filter by priority/category/status/date range
-- **Sorting** - Sort by due_date, priority, created_at, title (asc/desc)
+- **Recurring Tasks** - Daily, weekly, monthly, custom cron (croniter)
+- **Due Dates & Reminders** - Schedule reminders with in-app, email, push notifications
+- **Priorities** - LOW, MEDIUM, HIGH, URGENT with enum validation
+- **Categories/Tags** - User-defined categories with hex color coding
+- **Search & Filter** - Full-text keyword search, filter by priority/category/status/date range
+- **Sort** - By due_date, priority, created_at, updated_at, title (asc/desc)
 
 ### Event-Driven Architecture (Dapr + Kafka)
-- **Dapr Pub/Sub** - Publish task lifecycle events to Kafka topics via Dapr sidecar
-- **Topics**: `task-events`, `reminders`, `audit-logs`
-- **Dapr State Store** - PostgreSQL-backed state store for caching and notifications
-- **Dapr Subscriptions** - Push-based event delivery to FastAPI endpoints
+- **3 Kafka Topics**: task-events, reminders, audit-logs
+- **Dapr Pub/Sub** - Publish/subscribe via Dapr sidecar (no direct Kafka client)
+- **Dapr State Store** - PostgreSQL-backed caching and notification state
+- **Dapr Bindings** - 3 cron jobs (reminder checker, recurring processor, daily cleanup)
+- **Dapr Secrets** - Kubernetes secret store integration
+- **Dapr Service Invocation** - Inter-service HTTP calls via Dapr
 
 ### Microservices
-- **Notification Service** - Processes reminder events, delivers in-app/email/push notifications
-- **Audit Logging** - All task operations published to `audit-logs` topic for compliance
+- **Notification Service** (port 8001) - Processes reminders, delivers in-app/email/push
+- **Recurring Task Service** (port 8002) - Spawns new task instances on schedule
+
+### Resiliency
+- Retry policies (constant, exponential, aggressive, conservative)
+- Timeout policies (5s fast, 30s default, 120s long, 300s extended)
+- Circuit breaker policies (3-10 failure thresholds)
+
+### CI/CD
+- GitHub Actions: lint, test, build Docker images, deploy to staging
+- Multi-stage Docker builds for all services
+- Codecov integration for coverage reporting
 
 ---
 
@@ -49,10 +61,11 @@ Phase V extends the Todo application with advanced features and cloud-native arc
                     │    Neon     │   │  Pub/Sub  │
                     │ PostgreSQL  │   └─────┬─────┘
                     └─────────────┘         │
-                                     ┌─────▼──────────┐
-                                     │  Notification   │
-                                     │    Service      │
-                                     └────────────────┘
+                                    ┌───────┴────────┐
+                              ┌─────▼──────┐  ┌──────▼─────────┐
+                              │Notification│  │Recurring Task  │
+                              │  Service   │  │   Service      │
+                              └────────────┘  └────────────────┘
 ```
 
 ---
@@ -64,27 +77,57 @@ phase-5/
 ├── backend/
 │   ├── src/
 │   │   ├── api/
-│   │   │   └── dapr_subscriptions.py   # Dapr event handlers
+│   │   │   ├── advanced_tasks.py       # Search, filter, sort, categories, recurring, reminders
+│   │   │   └── dapr_subscriptions.py   # Event handlers for Dapr pub/sub
 │   │   ├── events/
 │   │   │   ├── event_schemas.py        # TaskEvent, ReminderEvent, AuditLogEvent
-│   │   │   └── dapr_publisher.py       # Publish events via Dapr
+│   │   │   └── dapr_publisher.py       # Publish events via Dapr sidecar
 │   │   ├── models/
+│   │   │   ├── task.py                 # Extended task with priority, due_date
 │   │   │   └── advanced_task.py        # RecurringTask, TaskReminder, TaskCategory
 │   │   └── services/
-│   │       ├── dapr_client.py          # Dapr HTTP API wrapper
-│   │       ├── reminder_service.py     # Reminder scheduling & notifications
-│   │       └── search_service.py       # Search, filter, sort
+│   │       ├── search_service.py       # Full-text search, multi-filter, sort
+│   │       ├── reminder_service.py     # Reminder scheduling & Dapr pub/sub
+│   │       ├── recurring_task_service.py # Cron-based recurring tasks
+│   │       └── dapr_client.py          # Dapr HTTP API wrapper
 │   └── migrations/
-│       └── 002_advanced_features.py    # Schema migration for Phase V tables
+│       └── 002_advanced_features.py    # Schema for Phase V tables
 ├── dapr/
+│   ├── config.yaml                     # Tracing, metrics, CORS, access control
 │   └── components/
 │       ├── pubsub-kafka.yaml           # Kafka pub/sub component
-│       ├── pubsub-redis.yaml           # Redis pub/sub (local dev)
-│       └── statestore-postgres.yaml    # PostgreSQL state store
+│       ├── statestore-postgres.yaml    # PostgreSQL state store
+│       ├── bindings-cron.yaml          # 3 cron job bindings
+│       ├── secret-store.yaml           # Kubernetes secrets
+│       └── resiliency.yaml             # Retry, timeout, circuit breaker
 ├── services/
-│   └── notification-service/
-│       └── main.py                     # Notification microservice (FastAPI)
-└── README.md
+│   ├── notification-service/
+│   │   ├── main.py                     # Standalone service
+│   │   ├── main_dapr.py               # Dapr-integrated service
+│   │   ├── Dockerfile
+│   │   └── requirements.txt
+│   └── recurring-task-service/
+│       ├── main.py                     # Standalone service
+│       ├── main_dapr.py               # Dapr-integrated service
+│       ├── Dockerfile
+│       └── requirements.txt
+├── k8s/cloud/                          # Production K8s manifests
+│   ├── namespace.yaml
+│   ├── backend-deployment.yaml         # 3 replicas, Dapr sidecar
+│   ├── frontend-deployment.yaml
+│   ├── notification-service-deployment.yaml
+│   ├── recurring-task-service-deployment.yaml
+│   ├── services.yaml
+│   ├── ingress.yaml                    # TLS + cert-manager
+│   ├── hpa.yaml                        # Horizontal Pod Autoscaler
+│   └── kafka-strimzi.yaml              # Strimzi Kafka operator
+├── .github/workflows/
+│   ├── ci.yml                          # Lint, test, build, deploy
+│   └── deploy.yml                      # Production deployment
+└── docs/                               # Architecture documentation
+    ├── CLOUD_DEPLOYMENT_GUIDE.md
+    ├── DAPR_ARCHITECTURE.md
+    └── DAPR_INTEGRATION_EXAMPLE.md
 ```
 
 ---
@@ -107,16 +150,25 @@ dapr run --app-id todo-backend --app-port 8000 --dapr-http-port 3500 \
 ```bash
 cd phase-5/services/notification-service
 dapr run --app-id notification-service --app-port 8001 --dapr-http-port 3501 \
-  --resources-path ../../dapr/components -- uvicorn main:app --port 8001
+  --resources-path ../../dapr/components -- uvicorn main_dapr:app --port 8001
+```
+
+### Start Recurring Task Service
+```bash
+cd phase-5/services/recurring-task-service
+dapr run --app-id recurring-task-service --app-port 8002 --dapr-http-port 3502 \
+  --resources-path ../../dapr/components -- uvicorn main_dapr:app --port 8002
 ```
 
 ---
 
 ## Cloud Deployment
 
-For production cloud deployment (AKS/GKE/Oracle Cloud):
-- Use Helm charts from `phase-4/helm/` as base
-- Add Dapr annotations to pod specs
-- Configure external Kafka cluster (Confluent Cloud, Amazon MSK)
-- Use managed PostgreSQL with connection pooling
-- Set up monitoring with Prometheus + Grafana
+For production deployment on AKS, GKE, or Oracle Cloud, see `docs/CLOUD_DEPLOYMENT_GUIDE.md`.
+
+Key steps:
+1. Deploy Strimzi Kafka operator (`k8s/cloud/kafka-strimzi.yaml`)
+2. Install Dapr on cluster (`dapr init -k`)
+3. Apply Dapr components (`dapr/components/`)
+4. Deploy services (`k8s/cloud/`)
+5. Configure ingress with TLS (`k8s/cloud/ingress.yaml`)

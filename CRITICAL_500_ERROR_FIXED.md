@@ -136,7 +136,7 @@ The 401 error is **expected** because the session token expired. This proves the
 
 ### To Test Complete Workflow:
 
-1. **Login via Frontend**: Navigate to https://frontend-peach-xi-69.vercel.app
+1. **Login via Frontend**: Navigate to https://talal-s-tda.vercel.app
 2. **Authenticate**: Login with your credentials (Better Auth)
 3. **Create Task**: Add a new todo task
 4. **Verify**: Task appears in list ✅

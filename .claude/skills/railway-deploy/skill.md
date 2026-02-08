@@ -184,7 +184,7 @@ AUTH_SERVER_URL=https://auth-server-production-8251.up.railway.app
 DATABASE_URL=postgresql://...
 
 # CORS Origins
-CORS_ORIGINS=https://frontend-peach-xi-69.vercel.app,http://localhost:3000
+CORS_ORIGINS=https://talal-s-tda.vercel.app,http://localhost:3000
 ```
 
 ### Critical Auth Server Variables
@@ -196,7 +196,7 @@ DATABASE_URL=postgresql://...
 BETTER_AUTH_SECRET=<random-secret>
 
 # CORS Origins
-CORS_ORIGINS=https://frontend-peach-xi-69.vercel.app,https://tda-backend-production.up.railway.app
+CORS_ORIGINS=https://talal-s-tda.vercel.app,https://tda-backend-production.up.railway.app
 ```
 
 ## Health Check Verification
@@ -266,7 +266,7 @@ claude-code /railway-deploy --service auth-server --action deploy
 claude-code /railway-deploy --service all --action status
 
 # 4. Test authentication flow
-claude-code /browser-test-auth --url https://frontend-peach-xi-69.vercel.app
+claude-code /browser-test-auth --url https://talal-s-tda.vercel.app
 ```
 
 ### 3. Post-Deployment Verification
@@ -322,7 +322,7 @@ jobs:
       - name: Test Authentication
         run: |
           claude-code /browser-test-auth \
-            --url https://frontend-peach-xi-69.vercel.app
+            --url https://talal-s-tda.vercel.app
 ```
 
 ## Dependencies

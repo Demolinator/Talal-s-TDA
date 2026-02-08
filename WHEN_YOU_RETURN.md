@@ -41,7 +41,7 @@
 
 ### The Problem
 Your todo app had a **cross-domain authentication issue**:
-- Frontend: `frontend-peach-xi-69.vercel.app` (Vercel)
+- Frontend: `talal-s-tda.vercel.app` (Vercel)
 - Backend: `tda-backend-production.up.railway.app` (Railway)
 - Browsers block cookies between different domains for security
 
@@ -177,7 +177,7 @@ If you want to record a demo:
 
 ```
 1. Start recording
-2. Navigate to https://frontend-peach-xi-69.vercel.app
+2. Navigate to https://talal-s-tda.vercel.app
 3. Click "Sign in" or go to /login
 4. Enter: ta234567801@gmail.com / talal12345
 5. Click "Sign In" → Dashboard appears

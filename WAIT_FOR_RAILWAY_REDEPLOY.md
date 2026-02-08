@@ -63,7 +63,7 @@ Starting Container
 
 **Then test**:
 1. Open fresh incognito window
-2. Navigate to: https://frontend-peach-xi-69.vercel.app/login
+2. Navigate to: https://talal-s-tda.vercel.app/login
 3. Login with your credentials
 
 ---

@@ -47,7 +47,7 @@ All 5 phases are **fully implemented** with zero TODOs, zero placeholder URLs, a
 | Standalone Docker Output | ✅ | `output: 'standalone'` configured |
 
 **Deployed**:
-- Frontend: https://frontend-peach-xi-69.vercel.app
+- Frontend: https://talal-s-tda.vercel.app
 - Backend: https://talal-s-tda-production.up.railway.app
 
 **Location**: `/phase-2/backend/` and `/phase-2/frontend/`

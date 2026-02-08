@@ -22,7 +22,7 @@ Now all cookies are on the same domain, so authentication works!
 
 **CRITICAL**: You MUST clear browser data or you'll still have the old code cached!
 
-1. **Close all tabs** for `frontend-peach-xi-69.vercel.app`
+1. **Close all tabs** for `talal-s-tda.vercel.app`
 2. **Open DevTools** (F12)
 3. Go to **Application** → **Storage** → Click **"Clear site data"**
 4. **Close and restart browser** (to clear service workers)
@@ -30,7 +30,7 @@ Now all cookies are on the same domain, so authentication works!
 ### Step 2: Open Fresh Incognito Window
 
 1. Open **Incognito/Private Window** (Ctrl + Shift + N)
-2. Navigate to: `https://frontend-peach-xi-69.vercel.app/login`
+2. Navigate to: `https://talal-s-tda.vercel.app/login`
 
 ### Step 3: Watch Console for Debug Logs
 
@@ -141,7 +141,7 @@ export const authClient = createAuthClient({
 ## 🚀 Deployment Info
 
 **Commit**: `833784f`
-**Deployment URL**: https://frontend-peach-xi-69.vercel.app
+**Deployment URL**: https://talal-s-tda.vercel.app
 **Build Time**: ~1 minute ago
 **Status**: ✅ Deployed successfully
 

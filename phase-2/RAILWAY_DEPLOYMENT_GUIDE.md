@@ -55,7 +55,7 @@ const pool = new Pool({
 trustedOrigins: [
   "http://localhost:3000",
   "http://127.0.0.1:3000",
-  "https://frontend-peach-xi-69.vercel.app",
+  "https://talal-s-tda.vercel.app",
   "https://tda-backend-production.up.railway.app", // Backend proxies requests
 ],
 ```
@@ -90,7 +90,7 @@ Set these variables in Railway dashboard for the **auth-server** service:
 | `DATABASE_URL` | `postgresql://neondb_owner:...@ep-...neon.tech/neondb?sslmode=require` | From Neon dashboard |
 | `BETTER_AUTH_SECRET` | `<your-secret>` | Must match backend `JWT_SECRET` |
 | `BETTER_AUTH_URL` | `https://auth-server-production-8251.up.railway.app` | Your auth server Railway URL |
-| `CORS_ORIGINS` | `http://localhost:3000,https://frontend-peach-xi-69.vercel.app,https://tda-backend-production.up.railway.app` | Comma-separated |
+| `CORS_ORIGINS` | `http://localhost:3000,https://talal-s-tda.vercel.app,https://tda-backend-production.up.railway.app` | Comma-separated |
 | `NODE_ENV` | `production` | Enable production mode |
 | `PORT` | `3001` | Railway auto-assigns, but set for consistency |
 
@@ -103,7 +103,7 @@ Set these variables in Railway dashboard for the **backend** service:
 | `DATABASE_URL` | `postgresql://neondb_owner:...@ep-...neon.tech/neondb?sslmode=require` | Same as auth server |
 | `JWT_SECRET` | `<your-secret>` | Must match auth server `BETTER_AUTH_SECRET` |
 | `AUTH_SERVER_URL` | `https://auth-server-production-8251.up.railway.app` | **CRITICAL**: Must be set! |
-| `CORS_ORIGINS` | `http://localhost:3000,https://frontend-peach-xi-69.vercel.app` | Frontend origins |
+| `CORS_ORIGINS` | `http://localhost:3000,https://talal-s-tda.vercel.app` | Frontend origins |
 | `ENVIRONMENT` | `production` | Enable production mode |
 | `JWT_ALGORITHM` | `HS256` | Default algorithm |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `15` | 15 minute expiry |
@@ -178,7 +178,7 @@ curl -X POST https://tda-backend-production.up.railway.app/api/auth/sign-in/emai
 **Expected Response**: 200 OK with user object and session
 
 **Test Frontend**:
-1. Go to https://frontend-peach-xi-69.vercel.app/login
+1. Go to https://talal-s-tda.vercel.app/login
 2. Enter email and password
 3. Click "Sign In"
 4. Should redirect to /dashboard without 504 error
@@ -245,7 +245,7 @@ curl https://tda-backend-production.up.railway.app/api/auth/get-session
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Frontend (Vercel)                            │
-│              https://frontend-peach-xi-69.vercel.app            │
+│              https://talal-s-tda.vercel.app            │
 └─────────────────┬───────────────────────┬───────────────────────┘
                   │                       │
                   │ Auth Requests         │ API Requests

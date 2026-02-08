@@ -14,7 +14,7 @@ Automated browser testing for authentication flows using Playwright MCP. Tests l
 - Validate dashboard access
 
 ## Inputs
-- `--url` (required): Frontend URL to test (e.g., https://frontend-peach-xi-69.vercel.app)
+- `--url` (required): Frontend URL to test (e.g., https://talal-s-tda.vercel.app)
 - `--email` (optional): Test user email (default: test@example.com)
 - `--password` (optional): Test user password (default: password123)
 - `--screenshot-dir` (optional): Directory for screenshots (default: .playwright-screenshots)
@@ -134,12 +134,12 @@ Create JSON report with:
 
 ### Test Production
 ```bash
-claude-code /browser-test-auth --url https://frontend-peach-xi-69.vercel.app
+claude-code /browser-test-auth --url https://talal-s-tda.vercel.app
 ```
 
 ### Test with Custom Credentials
 ```bash
-claude-code /browser-test-auth --url https://frontend-peach-xi-69.vercel.app --email user@example.com --password mypass123
+claude-code /browser-test-auth --url https://talal-s-tda.vercel.app --email user@example.com --password mypass123
 ```
 
 ### Test Local Development

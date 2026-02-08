@@ -10,7 +10,7 @@ echo ""
 # URLs
 BACKEND_URL="https://tda-backend-production.up.railway.app"
 AUTH_SERVER_URL="https://auth-server-production-8251.up.railway.app"
-FRONTEND_URL="https://frontend-peach-xi-69.vercel.app"
+FRONTEND_URL="https://talal-s-tda.vercel.app"
 
 # Test credentials
 EMAIL="test@test.com"

@@ -77,7 +77,6 @@ export const auth = betterAuth({
   trustedOrigins: [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://frontend-peach-xi-69.vercel.app",
     "https://talal-s-tda.vercel.app",
     "https://talal-s-tda-production.up.railway.app", // Backend needs to proxy requests
   ],

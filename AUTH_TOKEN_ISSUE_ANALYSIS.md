@@ -7,7 +7,7 @@ Login succeeds (200 OK), but subsequent API requests fail with 401 Unauthorized.
 
 ### Issue 1: Cross-Domain Cookie Blocking
 **Diagnosis**: Browser doesn't send cookies cross-domain even with `SameSite=None; Secure`
-- Frontend: `frontend-peach-xi-69.vercel.app`
+- Frontend: `talal-s-tda.vercel.app`
 - Backend: `tda-backend-production.up.railway.app`
 
 **Solution**: Implement JWT token in Authorization header instead of relying on cookies

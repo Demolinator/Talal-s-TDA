@@ -1,50 +1,61 @@
 # Phase III: AI Chatbot with MCP Tools
 
-**Status**: Implemented (integrated into Phase II backend)
+**Status**: ✅ Complete (integrated into Phase II backend)
+**Live**: [https://talal-s-tda.vercel.app](https://talal-s-tda.vercel.app) (Chat page)
 
 ---
 
 ## Overview
 
-Phase III adds an AI-powered chatbot to the Todo application using the OpenAI Agents SDK and Model Context Protocol (MCP). The chatbot understands natural language and manages tasks through MCP tools.
+Phase III adds an AI-powered chatbot to the Todo application using the OpenAI Agents SDK and the official Model Context Protocol (MCP) SDK. The chatbot understands natural language and manages tasks through 5 MCP tools.
 
 ## Implementation Location
 
-The chatbot is integrated directly into the Phase II backend at `/phase-2/backend/`:
+The chatbot is integrated into the Phase II backend at `/phase-2/backend/`:
 
-- **MCP Server**: `/phase-2/backend/src/mcp_server.py`
-- **MCP Tools**: `/phase-2/backend/src/mcp_tools/`
-- **Chat API**: `/phase-2/backend/src/api/chat.py`
-- **Agent Service**: `/phase-2/backend/src/services/agent_service.py`
-- **Conversation Models**: `/phase-2/backend/src/models/conversation.py`
+| Component | Location |
+|-----------|----------|
+| MCP Server | `src/mcp_server.py` |
+| MCP Tools (5) | `src/mcp_tools/` |
+| Chat API (6 endpoints) | `src/api/chat.py` |
+| Agent Service | `src/services/agent_service.py` |
+| Conversation Models | `src/models/conversation.py` |
+| Chat UI | `../frontend/src/components/chat/ChatBot.tsx` |
+| Voice Input | `../frontend/src/hooks/useSpeechRecognition.ts` |
+| Voice Output | `../frontend/src/hooks/useSpeechSynthesis.ts` |
 
-## Features
+## Key Technologies
 
-### MCP Tools (5 tools)
-1. **add_task** - Create new tasks via natural language
-2. **list_tasks** - List and filter tasks
-3. **complete_task** - Mark tasks as complete
-4. **delete_task** - Delete tasks
-5. **update_task** - Update task details
+- **OpenAI Agents SDK** (`openai-agents>=0.0.2`) - Agent framework with function tools
+- **Official MCP SDK** (`mcp>=1.24.0`) - Model Context Protocol with stdio transport
+- **Gemini Model Rotation** - 4 Gemini models for reliability
+- **Vercel AI SDK** - Frontend chat UI integration
+- **Web Speech API** - Voice input (recognition) + voice output (synthesis)
 
-### Chat Endpoints
+## MCP Tools
+
+| Tool | Description |
+|------|-------------|
+| `add_task` | Create new tasks via natural language |
+| `list_tasks` | List and filter tasks |
+| `complete_task` | Mark tasks as complete |
+| `delete_task` | Delete tasks with confirmation |
+| `update_task` | Update task title/description |
+
+## Chat Endpoints
+
 - `POST /api/chat/conversations` - Create conversation
 - `GET /api/chat/conversations` - List conversations
-- `POST /api/chat/conversations/{id}/messages` - Send message
-- `GET /api/chat/conversations/{id}/messages` - Get history
+- `GET /api/chat/conversations/{id}` - Get conversation
+- `POST /api/chat/conversations/{id}/messages` - Send message & get AI response
+- `GET /api/chat/conversations/{id}/messages` - Get message history
+- `DELETE /api/chat/conversations/{id}` - Delete conversation
 
-### Conversation State
-- All conversations and messages persisted in PostgreSQL
-- Stateless server design (no in-memory state)
-- Full tool call and result history preserved
+## Architecture
 
-### Bonus Features
-- Voice input via Web Speech API (`useSpeechRecognition.ts`)
-- Voice output via Speech Synthesis (`useSpeechSynthesis.ts`)
-- Multi-language support (English + Urdu)
+- Conversation state persisted in PostgreSQL (not in-memory)
+- Stateless server design (context rebuilt from DB on each request)
+- Intent detection, pronoun resolution, confirmation flows
+- Fallback execution when agent API fails
 
-## Stack
-- OpenAI Agents SDK with Gemini model rotation
-- Official MCP SDK with stdio transport
-- FastAPI chat endpoints
-- Vercel AI SDK for frontend chat UI
+See Phase II README for running instructions.

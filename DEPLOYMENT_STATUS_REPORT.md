@@ -167,7 +167,7 @@ curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/jso
 ```
 
 ### Step 4: Test via Frontend (Playwright-style)
-1. Open: https://frontend-peach-xi-69.vercel.app
+1. Open: https://talal-s-tda.vercel.app
 2. Click "Login"
 3. Enter credentials: `test@test.com` / `test1234`
 4. Click "Sign In"

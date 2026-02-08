@@ -35,7 +35,7 @@
 
 ### 4. CORS Configuration ✅
 - ✅ Preflight OPTIONS requests return correct headers
-- ✅ `Access-Control-Allow-Origin: https://frontend-peach-xi-69.vercel.app`
+- ✅ `Access-Control-Allow-Origin: https://talal-s-tda.vercel.app`
 - ✅ `Access-Control-Allow-Credentials: true`
 - ✅ `Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS`
 
@@ -173,11 +173,11 @@ curl -H "Authorization: Bearer ZEt824NAor2jaH9H5iU9ppXcAMPjPPwH" \
 
 ### Environment Variables (Railway)
 - `DATABASE_URL`: `postgresql://neondb_owner:npg_8WSLxbOhQf1a@ep-solitary-morning-a4vdcuab-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require`
-- `CORS_ORIGINS`: `http://localhost:3000,https://frontend-peach-xi-69.vercel.app`
+- `CORS_ORIGINS`: `http://localhost:3000,https://talal-s-tda.vercel.app`
 - `AUTH_SERVER_URL`: `https://auth-server-production-8251.up.railway.app`
 
 ### URLs
-- **Frontend**: https://frontend-peach-xi-69.vercel.app
+- **Frontend**: https://talal-s-tda.vercel.app
 - **Backend**: https://tda-backend-production.up.railway.app
 - **Auth Server**: https://auth-server-production-8251.up.railway.app
 - **Database**: Neon PostgreSQL (shared)

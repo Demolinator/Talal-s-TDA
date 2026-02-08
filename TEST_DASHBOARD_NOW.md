@@ -22,7 +22,7 @@ The `HTTPSRedirectMiddleware` is working correctly.
 
 ### Step 1: Clear Everything (Fresh Start)
 
-1. **Close all browser tabs** for `frontend-peach-xi-69.vercel.app`
+1. **Close all browser tabs** for `talal-s-tda.vercel.app`
 2. **Open Incognito/Private Window** (Ctrl + Shift + N in Chrome)
 3. **Open DevTools** (F12)
 4. Go to **Application** tab → **Storage** → Click **"Clear site data"**
@@ -30,7 +30,7 @@ The `HTTPSRedirectMiddleware` is working correctly.
 
 ### Step 2: Navigate to Dashboard
 
-1. Go to: **https://frontend-peach-xi-69.vercel.app/dashboard**
+1. Go to: **https://talal-s-tda.vercel.app/dashboard**
 2. If redirected to login, sign in with your credentials
 3. Watch the **Network** tab for requests to `/api/tasks/`
 

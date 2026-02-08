@@ -14,7 +14,7 @@
 |-----------|--------|-----|--------|
 | **Auth Server** | ✅ WORKING | https://auth-server-production-8251.up.railway.app | a4accf3 |
 | **Backend API** | ✅ WORKING | https://tda-backend-production.up.railway.app | a4accf3 |
-| **Frontend** | ✅ DEPLOYED | https://frontend-peach-xi-69.vercel.app | Latest |
+| **Frontend** | ✅ DEPLOYED | https://talal-s-tda.vercel.app | Latest |
 | **Database** | ✅ WORKING | Neon PostgreSQL | N/A |
 
 ---

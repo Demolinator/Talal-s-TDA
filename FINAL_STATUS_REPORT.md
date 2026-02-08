@@ -120,7 +120,7 @@ async def get_current_user(request: Request, session: Session = Depends(get_sess
 ### 3. Frontend Deployment to Vercel ✅
 
 **Service**: Vercel automatic deployment
-**URL**: `https://frontend-peach-xi-69.vercel.app`
+**URL**: `https://talal-s-tda.vercel.app`
 **Status**: 🔄 Latest commit deploying
 **Latest Commit**: `86cbc83`
 
@@ -167,7 +167,7 @@ The latest token extraction fix (commit `86cbc83`) hasn't fully deployed yet. On
 │                         USER FLOW                            │
 └─────────────────────────────────────────────────────────────┘
 
-1. User visits https://frontend-peach-xi-69.vercel.app/login
+1. User visits https://talal-s-tda.vercel.app/login
 
 2. User enters email/password → Click "Sign In"
 
@@ -259,7 +259,7 @@ Auth Server: ✅ Better Auth running
 ### Frontend (Vercel)
 ```
 🔄 DEPLOYING (Latest commit: 86cbc83)
-URL: https://frontend-peach-xi-69.vercel.app
+URL: https://talal-s-tda.vercel.app
 Expected: Token extraction fix will be live in 2-5 minutes
 Cache: May need hard refresh (Ctrl+Shift+R)
 ```

@@ -25,7 +25,7 @@ Railway needs to deploy the new backend:
 ### 2. After 2 Minutes - Try Login
 
 1. **Open fresh incognito window**
-2. Navigate to: https://frontend-peach-xi-69.vercel.app/login
+2. Navigate to: https://talal-s-tda.vercel.app/login
 3. **Open DevTools** (F12) → **Network** tab
 4. **Login** with your credentials
 

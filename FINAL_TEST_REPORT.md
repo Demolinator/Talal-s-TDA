@@ -130,7 +130,7 @@ Content-Type: application/json
 
 ```javascript
 // Login test
-await page.goto('https://frontend-peach-xi-69.vercel.app/login');
+await page.goto('https://talal-s-tda.vercel.app/login');
 await page.getByRole('textbox', { name: 'Email Address' }).fill('testuser123@example.com');
 await page.getByRole('textbox', { name: 'Password' }).fill('TestPass123!');
 await page.getByRole('button', { name: 'Sign In' }).click();
@@ -197,7 +197,7 @@ await page.getByRole('button', { name: 'Add Task' }).click();
 
 ## Test Environment
 
-**Frontend**: https://frontend-peach-xi-69.vercel.app
+**Frontend**: https://talal-s-tda.vercel.app
 **Backend**: https://tda-backend-production.up.railway.app
 **Database**: Neon PostgreSQL (shared)
 **Auth**: Better Auth v1.4.6

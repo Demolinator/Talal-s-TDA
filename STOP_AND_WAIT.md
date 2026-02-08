@@ -64,7 +64,7 @@ Starting Container
 
 **Then test:**
 1. **One fresh incognito window**
-2. Navigate to: https://frontend-peach-xi-69.vercel.app/login
+2. Navigate to: https://talal-s-tda.vercel.app/login
 3. **Try login ONCE** (not multiple times!)
 4. **Open Network tab BEFORE clicking login**
 

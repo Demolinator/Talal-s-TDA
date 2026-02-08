@@ -2,7 +2,7 @@
 
 **Test Date**: December 27, 2025
 **Test Method**: Automated browser testing with Playwright
-**Frontend URL**: https://frontend-peach-xi-69.vercel.app
+**Frontend URL**: https://talal-s-tda.vercel.app
 **Backend URL**: https://tda-backend-production.up.railway.app
 
 ---
@@ -29,7 +29,7 @@
 ### 1. Login Page Load ✅ PASS
 
 **Test**: Navigate to login page
-**URL**: https://frontend-peach-xi-69.vercel.app/login
+**URL**: https://talal-s-tda.vercel.app/login
 **Result**: ✅ Page loads successfully
 
 **Screenshot Evidence**:
@@ -86,8 +86,8 @@ Response: { user: {...}, session: { token: "...", expiresAt: "..." } }
 
 **URL Change**:
 ```
-Before: https://frontend-peach-xi-69.vercel.app/login
-After:  https://frontend-peach-xi-69.vercel.app/dashboard
+Before: https://talal-s-tda.vercel.app/login
+After:  https://talal-s-tda.vercel.app/dashboard
 ```
 
 **Assessment**: Navigation flow working correctly.
@@ -228,7 +228,7 @@ Actual: Authorization header NOT present
 ### The Cross-Domain Authentication Challenge
 
 **Problem**:
-- Frontend: `frontend-peach-xi-69.vercel.app` (Vercel)
+- Frontend: `talal-s-tda.vercel.app` (Vercel)
 - Backend: `tda-backend-production.up.railway.app` (Railway)
 - Different domains → Browsers block third-party cookies
 
@@ -313,7 +313,7 @@ Environment: Production
 Branch: main
 Commit: 86cbc83
 Status: Deployed (CDN propagating)
-URL: https://frontend-peach-xi-69.vercel.app
+URL: https://talal-s-tda.vercel.app
 ```
 
 ### Railway Deployment
