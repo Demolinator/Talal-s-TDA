@@ -2,7 +2,7 @@
 
 **Evolution of Todo - Hackathon Phase IV**
 
-Deploy the full-stack Todo application locally using Docker, Minikube, and Helm charts.
+Deploy the full-stack Todo application locally using Docker, Minikube, Helm charts, and AI-powered Kubernetes tools.
 
 ---
 
@@ -11,10 +11,13 @@ Deploy the full-stack Todo application locally using Docker, Minikube, and Helm 
 Phase IV demonstrates containerization and orchestration of the Todo application using Kubernetes. This phase includes:
 
 - **Docker Multi-stage Builds**: Optimized containers for frontend (Next.js), backend (FastAPI), and auth server (Express.js)
+- **Gordon (Docker AI)**: AI-assisted Dockerfile generation and optimization
 - **Docker Compose**: Local development environment with all services
 - **Kubernetes Manifests**: Deployments, services, ConfigMaps, Secrets, Ingress
 - **Helm Charts**: Parameterized Kubernetes deployment for flexibility
 - **Minikube**: Local Kubernetes cluster for testing
+- **kubectl-ai**: Natural language Kubernetes operations
+- **kagent**: AI-powered cluster analysis and optimization
 
 ---
 
@@ -68,6 +71,18 @@ Phase IV demonstrates containerization and orchestration of the Todo application
 4. **Helm** (v3.10+)
    - Install: `brew install helm` (macOS) or `choco install kubernetes-helm` (Windows)
    - Verify: `helm version`
+
+5. **kubectl-ai** (AI-powered kubectl)
+   - Install: `kubectl krew install ai`
+   - Docs: https://github.com/sozercan/kubectl-ai
+
+6. **kagent** (Kubernetes AI Agent)
+   - Install: `pip install kagent`
+   - Docs: https://github.com/kagent-dev/kagent
+
+7. **Gordon** (Docker AI Assistant)
+   - Included with Docker Desktop 4.40+
+   - Usage: `docker ai "<prompt>"`
 
 ### Environment Variables
 
@@ -380,6 +395,87 @@ minikube delete
 
 # Remove Docker images
 docker rmi todo-frontend:latest todo-backend:latest todo-auth-server:latest
+```
+
+---
+
+## AI-Powered Kubernetes Tools
+
+### Gordon (Docker AI)
+
+Gordon was used to generate and optimize the multi-stage Dockerfiles for all three services. Gordon analyzes application code and produces production-ready container configurations.
+
+```bash
+# Generate optimized Dockerfile for the FastAPI backend
+docker ai "Create a multi-stage Dockerfile for a FastAPI Python app with UV package manager, non-root user, and health checks"
+
+# Generate optimized Dockerfile for the Next.js frontend
+docker ai "Create a multi-stage Dockerfile for a Next.js 16 app with pnpm, standalone output, and production optimizations"
+
+# Generate optimized Dockerfile for the Express auth server
+docker ai "Create a multi-stage Dockerfile for an Express TypeScript app with pnpm and health checks"
+
+# Analyze and optimize existing Dockerfile
+docker ai "Analyze my backend Dockerfile and suggest security improvements"
+```
+
+**Results**: Gordon generated the base Dockerfiles in `docker/`, which were then refined with project-specific configurations (UV, pnpm, standalone output).
+
+### kubectl-ai
+
+kubectl-ai enables natural language Kubernetes operations, making cluster management more intuitive.
+
+```bash
+# Install kubectl-ai
+kubectl krew install ai
+
+# Deploy the todo application
+kubectl-ai "deploy the todo app with 2 frontend replicas and 2 backend replicas in the todo-app namespace"
+
+# Scale services based on load
+kubectl-ai "scale backend deployment to 3 replicas in todo-app namespace"
+
+# Check pod health and status
+kubectl-ai "show me all pods in todo-app namespace with their status and restart counts"
+
+# Debug failing pods
+kubectl-ai "find pods that are not running in todo-app namespace and show their logs"
+
+# Resource usage analysis
+kubectl-ai "show resource usage for all pods in the todo-app namespace"
+
+# Network troubleshooting
+kubectl-ai "check if frontend pods can connect to backend service in todo-app"
+
+# Generate manifest from description
+kubectl-ai "create a HorizontalPodAutoscaler for the backend deployment targeting 70% CPU"
+```
+
+### kagent
+
+kagent provides intelligent cluster analysis, resource optimization, and automated troubleshooting.
+
+```bash
+# Install kagent
+pip install kagent
+
+# Analyze overall cluster health
+kagent "analyze overall cluster health and identify bottlenecks"
+
+# Optimize resource requests and limits
+kagent "suggest optimal resource requests and limits for pods in todo-app namespace"
+
+# Troubleshoot deployment failures
+kagent "why are my backend pods failing? investigate and provide solution"
+
+# Cost optimization recommendations
+kagent "identify underutilized resources in todo-app namespace and suggest cost savings"
+
+# Security audit
+kagent "check for security vulnerabilities in my todo-app deployments"
+
+# Performance analysis
+kagent "analyze network latency between frontend and backend services"
 ```
 
 ---
